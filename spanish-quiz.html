@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Load Firebase config from local file (ignored in git). Provide your own firebase-config.js -->
+    <script src="firebase-config.js"></script>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1597,16 +1599,9 @@ perro: dog
 
     <script>
         // ==================== FIREBASE CONFIGURATION ====================
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyAIK2pl9GT3ewwIlmLWZmIyX8vAR1V6Dtg",
-            authDomain: "spanishquiz-ea73d.firebaseapp.com",
-            projectId: "spanishquiz-ea73d",
-            storageBucket: "spanishquiz-ea73d.firebasestorage.app",
-            messagingSenderId: "150776325264",
-            appId: "1:150776325264:web:826e52857a0462dfe92415",
-            measurementId: "G-F71B5F85YZ"
-        };
+        // Config must be provided via firebase-config.js (not committed).
+        // See firebase-config.js.example for the shape.
+        const firebaseConfig = window.FIREBASE_CONFIG || null;
 
         // Initialize Firebase
         let firebaseApp = null;
@@ -1616,7 +1611,7 @@ perro: dog
         let unsubscribeVocab = null;
 
         // Check if Firebase config is set
-        const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza");
+        const isFirebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey);
 
         // Initialize Firebase if configured
         if (isFirebaseConfigured) {
