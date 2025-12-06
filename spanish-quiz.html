@@ -1745,13 +1745,61 @@ perro: dog
             });
         });
 
+        // ==================== WORD CLEANING UTILITIES ====================
+        
+        // Clean a word by removing parentheses, brackets, and content after /
+        function cleanVocabWord(word) {
+            if (!word) return '';
+            return word
+                .replace(/\s*\([^)]*\)/g, '')      // Remove (anything in parentheses)
+                .replace(/\s*\[[^\]]*\]/g, '')      // Remove [anything in brackets]
+                .replace(/\s*\{[^}]*\}/g, '')       // Remove {anything in braces}
+                .replace(/\/.*$/, '')               // Remove / and everything after
+                .replace(/\s+/g, ' ')               // Normalize whitespace
+                .trim();
+        }
+        
+        // Get simple answer for quiz (first part before semicolon)
+        // Returns { simple: "first part", full: "original" }
+        function getSimpleAnswer(definition) {
+            if (!definition) return { simple: '', full: '' };
+            
+            const full = definition.trim();
+            
+            // Split by semicolon and take first part
+            let simple = full.split(';')[0].trim();
+            
+            // Also clean the simple part
+            simple = cleanVocabWord(simple);
+            
+            return { simple, full };
+        }
+        
+        // Clean both Spanish and English when adding
+        function cleanWordPair(spanish, english) {
+            return {
+                spanish: cleanVocabWord(spanish),
+                english: cleanVocabWord(english),
+                // Store original full definition for display
+                englishFull: english.trim(),
+                spanishFull: spanish.trim()
+            };
+        }
+
         // Add word
         function addWord() {
             const spanish = spanishInput.value.trim();
             const english = englishInput.value.trim();
 
             if (spanish && english) {
-                vocabulary.push({ spanish, english, id: Date.now() });
+                const cleaned = cleanWordPair(spanish, english);
+                vocabulary.push({ 
+                    spanish: cleaned.spanish, 
+                    english: cleaned.english,
+                    spanishFull: cleaned.spanishFull,
+                    englishFull: cleaned.englishFull,
+                    id: Date.now() 
+                });
                 saveVocabulary();
                 renderWordList();
                 spanishInput.value = '';
@@ -2390,9 +2438,12 @@ perro: dog
             }
 
             selectedWords.forEach(word => {
+                const cleaned = cleanWordPair(word.spanish.trim(), word.english.trim());
                 vocabulary.push({
-                    spanish: word.spanish.trim(),
-                    english: word.english.trim(),
+                    spanish: cleaned.spanish,
+                    english: cleaned.english,
+                    spanishFull: cleaned.spanishFull,
+                    englishFull: cleaned.englishFull,
                     id: Date.now() + Math.random()
                 });
             });
@@ -2671,12 +2722,26 @@ perro: dog
             skipBtn.addEventListener('click', () => {
                 if (!answered) {
                     score.incorrect++;
-                    const correctAnswer = quizMode === 'spanish-to-english' ? word.english : word.spanish;
-                    document.getElementById('feedback').innerHTML = `<span class="incorrect">Skipped!</span> <span class="correct-answer">The answer was: ${escapeHtml(correctAnswer)}</span>`;
+                    const rawAnswer = quizMode === 'spanish-to-english' ? word.english : word.spanish;
+                    const simpleAnswer = getSimpleAnswer(rawAnswer).simple || rawAnswer;
+                    document.getElementById('feedback').innerHTML = `<span class="incorrect">Skipped!</span> <span class="correct-answer">The answer was: ${escapeHtml(simpleAnswer)}</span>`;
                     answerInput.classList.add('incorrect');
                     answered = true;
                     checkBtn.textContent = 'Next';
                     skipBtn.style.display = 'none';
+                    
+                    // Track for section mode
+                    if (allSections.length > 0) {
+                        sectionResults.push({
+                            word: word,
+                            correct: false,
+                            userAnswer: '',
+                            correctAnswer: simpleAnswer
+                        });
+                        if (!incorrectWords.some(w => w.id === word.id)) {
+                            incorrectWords.push(word);
+                        }
+                    }
                 } else {
                     nextQuestion();
                 }
@@ -2692,12 +2757,16 @@ perro: dog
             const skipBtn = document.getElementById('skip-btn');
 
             const userAnswer = answerInput.value.trim();
-            const correctAnswer = quizMode === 'spanish-to-english' ? word.english : word.spanish;
+            
+            // Get the simple (cleaned) answer for checking, but keep full for display
+            const rawAnswer = quizMode === 'spanish-to-english' ? word.english : word.spanish;
+            const fullAnswer = quizMode === 'spanish-to-english' ? (word.englishFull || word.english) : (word.spanishFull || word.spanish);
+            const simpleAnswer = getSimpleAnswer(rawAnswer).simple || rawAnswer;
 
-            // Check if answer is correct
+            // Check if answer is correct using the simple answer
             const { isCorrect, matchType } = fuzzyMatchingEnabled ?
-                isAnswerCorrect(userAnswer, correctAnswer) :
-                { isCorrect: userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim(), matchType: 'exact' };
+                isAnswerCorrect(userAnswer, simpleAnswer) :
+                { isCorrect: userAnswer.toLowerCase().trim() === simpleAnswer.toLowerCase().trim(), matchType: 'exact' };
 
             answered = true;
 
@@ -2714,9 +2783,9 @@ perro: dog
                     message += ' <span style="color: var(--accent); font-size: 0.9rem;">(keywords matched)</span>';
                 }
                 
-                // If there are multiple possible answers, show them
-                if (correctAnswer.includes(';') || correctAnswer.includes(' / ') || correctAnswer.includes(' or ')) {
-                    message += `<br><span style="color: var(--text-muted); font-size: 0.85rem;">Other acceptable answers: ${escapeHtml(correctAnswer)}</span>`;
+                // Show full definition if different from simple
+                if (fullAnswer !== simpleAnswer && fullAnswer.includes(';')) {
+                    message += `<br><span style="color: var(--text-muted); font-size: 0.85rem;">Full definition: ${escapeHtml(fullAnswer)}</span>`;
                 }
                 
                 feedback.innerHTML = message;
@@ -2732,7 +2801,8 @@ perro: dog
                 }
             } else {
                 score.incorrect++;
-                feedback.innerHTML = `<span class="incorrect">Not quite.</span> <span class="correct-answer">The answer was: ${escapeHtml(correctAnswer)}</span>`;
+                // Show the simple answer (what they needed to type)
+                feedback.innerHTML = `<span class="incorrect">Not quite.</span> <span class="correct-answer">The answer was: ${escapeHtml(simpleAnswer)}</span>`;
                 answerInput.classList.add('incorrect');
                 
                 // Track result for section mode
@@ -2741,7 +2811,7 @@ perro: dog
                         word: word,
                         correct: false,
                         userAnswer: userAnswer,
-                        correctAnswer: correctAnswer
+                        correctAnswer: simpleAnswer
                     });
                     // Add to incorrect words for retry
                     if (!incorrectWords.some(w => w.id === word.id)) {
