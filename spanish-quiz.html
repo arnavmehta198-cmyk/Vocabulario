@@ -1747,16 +1747,74 @@ perro: dog
 
         // ==================== WORD CLEANING UTILITIES ====================
         
-        // Clean a word by removing parentheses, brackets, and content after /
+        // Clean a word by removing parentheses, brackets
         function cleanVocabWord(word) {
             if (!word) return '';
             return word
                 .replace(/\s*\([^)]*\)/g, '')      // Remove (anything in parentheses)
                 .replace(/\s*\[[^\]]*\]/g, '')      // Remove [anything in brackets]
                 .replace(/\s*\{[^}]*\}/g, '')       // Remove {anything in braces}
-                .replace(/\/.*$/, '')               // Remove / and everything after
                 .replace(/\s+/g, ' ')               // Normalize whitespace
                 .trim();
+        }
+        
+        // Expand Spanish words with /a, /o, /as, /os endings into multiple words
+        // e.g., "soltero/a" → ["soltero", "soltera"]
+        // e.g., "el/la hermano/a" → ["el hermano", "la hermana"]
+        function expandSpanishWord(word) {
+            if (!word) return [];
+            
+            word = word.trim();
+            
+            // Pattern: word/ending (e.g., soltero/a, hermano/a, chico/a)
+            // Match: base word ending in 'o' or 'e' followed by /a or /as
+            const slashPattern = /^(.+)(o|e)\/([aeo]s?)$/i;
+            const match = word.match(slashPattern);
+            
+            if (match) {
+                const base = match[1];
+                const maleEnding = match[2];
+                const femaleEnding = match[3];
+                return [base + maleEnding, base + femaleEnding];
+            }
+            
+            // Pattern: word/fullword (e.g., el/la)
+            // Check for article patterns like "el/la word" or "un/una word"
+            const articlePattern = /^(el|un|los|unos)\/(la|una|las|unas)\s+(.+)$/i;
+            const articleMatch = word.match(articlePattern);
+            
+            if (articleMatch) {
+                const maleArticle = articleMatch[1];
+                const femaleArticle = articleMatch[2];
+                let noun = articleMatch[3];
+                
+                // Check if noun also has gender variation
+                const nounExpanded = expandSpanishWord(noun);
+                if (nounExpanded.length > 1) {
+                    return [maleArticle + ' ' + nounExpanded[0], femaleArticle + ' ' + nounExpanded[1]];
+                }
+                return [maleArticle + ' ' + noun, femaleArticle + ' ' + noun];
+            }
+            
+            // Simple pattern: just word/a at end (handles most cases)
+            const simplePattern = /^(.+)\/([ao]s?)$/i;
+            const simpleMatch = word.match(simplePattern);
+            
+            if (simpleMatch) {
+                const base = simpleMatch[1];
+                const ending = simpleMatch[2];
+                // If base ends in consonant or vowel other than the ending
+                if (base.endsWith('o')) {
+                    return [base, base.slice(0, -1) + ending];
+                } else if (base.endsWith('e')) {
+                    return [base, base.slice(0, -1) + ending];
+                } else {
+                    return [base, base + ending];
+                }
+            }
+            
+            // No expansion needed
+            return [word];
         }
         
         // Get simple answer for quiz (first part before semicolon)
@@ -1775,15 +1833,29 @@ perro: dog
             return { simple, full };
         }
         
-        // Clean both Spanish and English when adding
-        function cleanWordPair(spanish, english) {
-            return {
-                spanish: cleanVocabWord(spanish),
-                english: cleanVocabWord(english),
-                // Store original full definition for display
-                englishFull: english.trim(),
-                spanishFull: spanish.trim()
-            };
+        // Process a word pair and return array of word objects to add
+        function processWordPair(spanish, english) {
+            const cleanedEnglish = cleanVocabWord(english);
+            const englishFull = english.trim();
+            
+            // Clean parentheses etc from Spanish but keep /a patterns
+            let cleanedSpanish = spanish
+                .replace(/\s*\([^)]*\)/g, '')
+                .replace(/\s*\[[^\]]*\]/g, '')
+                .replace(/\s*\{[^}]*\}/g, '')
+                .trim();
+            
+            // Expand Spanish variations
+            const spanishVariations = expandSpanishWord(cleanedSpanish);
+            
+            // Create word objects for each variation
+            return spanishVariations.map((sp, index) => ({
+                spanish: cleanVocabWord(sp),
+                english: cleanedEnglish,
+                spanishFull: spanish.trim(),
+                englishFull: englishFull,
+                id: Date.now() + index + Math.random()
+            }));
         }
 
         // Add word
@@ -1792,19 +1864,19 @@ perro: dog
             const english = englishInput.value.trim();
 
             if (spanish && english) {
-                const cleaned = cleanWordPair(spanish, english);
-                vocabulary.push({ 
-                    spanish: cleaned.spanish, 
-                    english: cleaned.english,
-                    spanishFull: cleaned.spanishFull,
-                    englishFull: cleaned.englishFull,
-                    id: Date.now() 
+                const wordEntries = processWordPair(spanish, english);
+                wordEntries.forEach(entry => {
+                    vocabulary.push(entry);
                 });
                 saveVocabulary();
                 renderWordList();
                 spanishInput.value = '';
                 englishInput.value = '';
                 spanishInput.focus();
+                
+                if (wordEntries.length > 1) {
+                    showToast(`Added ${wordEntries.length} words: ${wordEntries.map(w => w.spanish).join(', ')}`);
+                }
             }
         }
 
@@ -2437,14 +2509,12 @@ perro: dog
                 return;
             }
 
+            let totalAdded = 0;
             selectedWords.forEach(word => {
-                const cleaned = cleanWordPair(word.spanish.trim(), word.english.trim());
-                vocabulary.push({
-                    spanish: cleaned.spanish,
-                    english: cleaned.english,
-                    spanishFull: cleaned.spanishFull,
-                    englishFull: cleaned.englishFull,
-                    id: Date.now() + Math.random()
+                const wordEntries = processWordPair(word.spanish.trim(), word.english.trim());
+                wordEntries.forEach(entry => {
+                    vocabulary.push(entry);
+                    totalAdded++;
                 });
             });
 
@@ -2455,7 +2525,7 @@ perro: dog
             resetUpload();
             pasteText.value = '';
             ocrTips.style.display = 'block';
-            showToast(`${selectedWords.length} word${selectedWords.length > 1 ? 's' : ''} added!`);
+            showToast(`${totalAdded} word${totalAdded > 1 ? 's' : ''} added!`);
         });
 
         function showToast(message) {
