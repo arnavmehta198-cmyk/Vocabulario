@@ -1,0 +1,4144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulario — Spanish Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg-primary: #1a1814;
+            --bg-secondary: #252118;
+            --bg-card: #2d2820;
+            --accent: #e8a849;
+            --accent-glow: #f4c67a;
+            --text-primary: #f5f0e8;
+            --text-secondary: #a89f8f;
+            --text-muted: #6d6456;
+            --success: #7cb87c;
+            --error: #d4726a;
+            --border: #3d352a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232, 168, 73, 0.08), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(232, 168, 73, 0.05), transparent);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeDown 0.8s ease-out;
+        }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 3.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 span {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: var(--bg-secondary);
+            padding: 0.4rem;
+            border-radius: 12px;
+            animation: fadeUp 0.6s ease-out 0.2s both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.9rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--bg-card);
+            color: var(--accent);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Input Panel */
+        .input-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            animation: fadeUp 0.6s ease-out 0.3s both;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            flex: 1;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .input-group textarea {
+            min-height: 150px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(232, 168, 73, 0.15);
+        }
+
+        .input-group input::placeholder,
+        .input-group textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-glow);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(232, 168, 73, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-small:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            margin-top: 1.5rem;
+            animation: fadeUp 0.6s ease-out 0.4s both;
+        }
+
+        .upload-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-header h3 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: var(--text-primary);
+        }
+
+        .upload-header .badge {
+            background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+            color: var(--bg-primary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Import method tabs */
+        .import-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--bg-secondary);
+            padding: 0.3rem;
+            border-radius: 8px;
+        }
+
+        .import-tab {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .import-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .import-tab.active {
+            background: var(--bg-card);
+            color: var(--accent);
+        }
+
+        .import-panel {
+            display: none;
+        }
+
+        .import-panel.active {
+            display: block;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(232, 168, 73, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drop-zone:hover::before,
+        .drop-zone.dragover::before {
+            opacity: 1;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--accent);
+        }
+
+        .drop-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .drop-zone-text {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .drop-zone input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Image Preview */
+        .image-preview {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .image-preview.active {
+            display: block;
+        }
+
+        .preview-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+
+        .preview-container img,
+        .preview-container canvas {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(26, 24, 20, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .preview-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .processing-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .processing-text {
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .processing-progress {
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        /* Preprocessing options */
+        .preprocess-options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .preprocess-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+        }
+
+        .preprocess-option:hover {
+            border-color: var(--accent);
+        }
+
+        .preprocess-option input {
+            accent-color: var(--accent);
+        }
+
+        .preprocess-option label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        /* Extracted Words Review */
+        .extracted-words {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .extracted-words.active {
+            display: block;
+        }
+
+        .extracted-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .extracted-header h4 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .extracted-count {
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .extracted-list {
+            max-height: 300px;
+            overflow-y: auto;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .extracted-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .extracted-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .extracted-item .word-inputs {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .extracted-item input[type="text"] {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .extracted-item input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .extracted-item .spanish-input {
+            font-style: italic;
+        }
+
+        .extracted-item .delete-extracted {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .extracted-item .delete-extracted:hover {
+            color: var(--error);
+        }
+
+        .extracted-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: flex-end;
+        }
+
+        .select-all-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .select-all-row label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .select-all-row input {
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        /* Add row button */
+        .add-row-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: transparent;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .add-row-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* OCR Tips */
+        .ocr-tips {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(232, 168, 73, 0.08);
+            border-radius: 8px;
+            border: 1px solid rgba(232, 168, 73, 0.2);
+        }
+
+        .ocr-tips h5 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .ocr-tips ul {
+            list-style: none;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .ocr-tips li {
+            padding: 0.25rem 0;
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .ocr-tips li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        /* Paste text section */
+        .paste-section {
+            margin-bottom: 1rem;
+        }
+
+        .paste-section textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .paste-section textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .paste-section textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .paste-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Raw OCR text display */
+        .raw-ocr-section {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .raw-ocr-section.active {
+            display: block;
+        }
+
+        .raw-ocr-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0.5rem 0;
+            text-decoration: underline;
+        }
+
+        .raw-ocr-toggle:hover {
+            color: var(--text-secondary);
+        }
+
+        .raw-ocr-text {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 0.5rem;
+        }
+
+        /* Word List */
+        .word-list {
+            margin-top: 2rem;
+        }
+
+        .word-list h3 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .word-count {
+            color: var(--accent);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .words-grid {
+            display: grid;
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .words-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .words-grid::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 3px;
+        }
+
+        .words-grid::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .word-item:hover {
+            border-color: var(--accent);
+        }
+
+        .word-pair {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .spanish-word {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .arrow {
+            color: var(--text-muted);
+        }
+
+        .english-word {
+            color: var(--text-primary);
+        }
+
+        .word-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .edit-btn,
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.2s ease;
+            font-size: 1.2rem;
+        }
+
+        .edit-btn:hover {
+            color: var(--accent);
+        }
+
+        .delete-btn:hover {
+            color: var(--error);
+        }
+
+        /* Edit mode for word items */
+        .word-item.editing {
+            background: rgba(232, 168, 73, 0.1);
+            border-color: var(--accent);
+        }
+
+        .word-item.editing .word-pair {
+            flex: 1;
+            gap: 0.75rem;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .word-item.editing .edit-input {
+            padding: 0.6rem 0.9rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .word-item.editing .edit-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .word-item.editing .edit-input.spanish {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .word-item.editing .edit-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Quiz Panel */
+        .quiz-container {
+            animation: fadeUp 0.6s ease-out;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-display {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .score-value {
+            font-family: 'Instrument Serif', serif;
+            font-size: 2rem;
+        }
+
+        .score-value.correct {
+            color: var(--success);
+        }
+
+        .score-value.incorrect {
+            color: var(--error);
+        }
+
+        .quiz-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            border-radius: 0 0 3px 3px;
+        }
+
+        .quiz-prompt {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .quiz-word {
+            font-family: 'Instrument Serif', serif;
+            font-size: 3.5rem;
+            font-style: italic;
+            color: var(--accent);
+            margin-bottom: 2.5rem;
+            line-height: 1.2;
+        }
+
+        .quiz-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 1.2rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .quiz-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .quiz-input.correct {
+            border-color: var(--success);
+            background: rgba(124, 184, 124, 0.1);
+        }
+
+        .quiz-input.incorrect {
+            border-color: var(--error);
+            background: rgba(212, 114, 106, 0.1);
+        }
+
+        .feedback {
+            min-height: 2rem;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .feedback.correct {
+            color: var(--success);
+        }
+
+        .feedback.incorrect {
+            color: var(--error);
+        }
+
+        .correct-answer {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .quiz-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-secondary);
+            border-radius: 2px;
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .quiz-complete {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .quiz-complete h2 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+
+        .final-score {
+            font-size: 4rem;
+            font-family: 'Instrument Serif', serif;
+            color: var(--accent);
+            margin: 1.5rem 0;
+        }
+
+        .score-message {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Quiz Mode Selection */
+        .mode-selection {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: rgba(232, 168, 73, 0.1);
+        }
+
+        .mode-btn h4 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .mode-btn p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .no-words-message {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .no-words-message h3 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .no-words-message p {
+            color: var(--text-muted);
+        }
+
+        /* Success toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: var(--bg-primary);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Auto-save indicator */
+        .auto-save-indicator {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(124, 184, 124, 0.9);
+            color: var(--bg-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auto-save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .auto-save-indicator .icon {
+            font-size: 0.9rem;
+        }
+
+        /* Hidden canvas for image processing */
+        #process-canvas {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+
+            .quiz-word {
+                font-size: 2.5rem;
+            }
+
+            .mode-selection {
+                flex-direction: column;
+            }
+
+            .extracted-item .word-inputs {
+                flex-direction: column;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                flex: 1 1 45%;
+            }
+
+            .preprocess-options {
+                flex-direction: column;
+            }
+        }
+
+        /* ==================== AUTH & USER PROFILE STYLES ==================== */
+        
+        .auth-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(26, 24, 20, 0.98), rgba(26, 24, 20, 0.9));
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideDown 0.4s ease-out;
+            pointer-events: auto;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .auth-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .auth-bar-logo {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.3rem;
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .sync-dot.syncing {
+            background: var(--accent);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .auth-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            pointer-events: auto;
+            position: relative;
+            z-index: 200;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            object-fit: cover;
+        }
+
+        .user-avatar-placeholder {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 1.2rem;
+            background: #fff;
+            color: #1f1f1f;
+            border: none;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-google:hover {
+            background: #f5f5f5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-google svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-signout {
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+            position: relative;
+            z-index: 201;
+        }
+
+        .btn-signout:hover {
+            color: var(--error);
+            border-color: var(--error);
+            background: rgba(212, 114, 106, 0.1);
+        }
+
+        .btn-signout:active {
+            transform: scale(0.95);
+        }
+
+        /* Container padding to account for auth bar */
+        body.has-auth-bar .container {
+            padding-top: 5rem;
+        }
+
+        /* Mobile adjustments for auth bar */
+        @media (max-width: 600px) {
+            .auth-bar {
+                flex-direction: column;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .auth-bar-left, .auth-bar-right {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .user-details {
+                display: none;
+            }
+
+            body.has-auth-bar .container {
+                padding-top: 7rem;
+            }
+        }
+    </style>
+</head>
+<body class="has-auth-bar">
+    <!-- Auth Bar -->
+    <div class="auth-bar" id="auth-bar">
+        <div class="auth-bar-left">
+            <span class="auth-bar-logo">Vocabulario</span>
+            <div class="sync-status" id="sync-status" style="display: none;">
+                <span class="sync-dot" id="sync-dot"></span>
+                <span id="sync-text">Synced</span>
+            </div>
+        </div>
+        <div class="auth-bar-right" id="auth-controls">
+            <!-- Auth UI will be inserted here by JavaScript -->
+            <button class="btn-google" id="google-signin-btn">
+                <svg viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Vocabul<span>ario</span></h1>
+            <p class="subtitle">Spanish Vocabulary Quiz</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="input">Add Words</button>
+            <button class="tab" data-tab="quiz">Take Quiz</button>
+        </div>
+
+        <!-- Input Panel -->
+        <div class="panel active" id="input-panel">
+            <div class="input-section">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="spanish-input">Spanish</label>
+                        <input type="text" id="spanish-input" placeholder="el libro" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="english-input">English</label>
+                        <input type="text" id="english-input" placeholder="the book" autocomplete="off">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-secondary" id="clear-all-btn">Clear All</button>
+                    <button class="btn btn-primary" id="add-word-btn">Add Word</button>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="upload-header">
+                    <h3>📷 Import Vocabulary</h3>
+                    <span class="badge">Smart Scan</span>
+                </div>
+
+                <div class="import-tabs">
+                    <button class="import-tab active" data-import="image">Scan Image</button>
+                    <button class="import-tab" data-import="paste">Paste Text</button>
+                </div>
+                
+                <!-- Image Import Panel -->
+                <div class="import-panel active" id="import-image">
+                    <div class="drop-zone" id="drop-zone">
+                        <input type="file" id="file-input" accept="image/*">
+                        <div class="drop-zone-icon">🖼️</div>
+                        <p class="drop-zone-text">Drop an image here or click to upload</p>
+                        <p class="drop-zone-hint">Supports JPG, PNG, WEBP</p>
+                    </div>
+
+                    <div class="image-preview" id="image-preview">
+                        <div class="preview-container">
+                            <canvas id="preview-canvas"></canvas>
+                            <img id="preview-img" src="" alt="Preview" style="display: none;">
+                            <div class="preview-overlay" id="preview-overlay">
+                                <div class="processing-spinner"></div>
+                                <p class="processing-text">Reading text...</p>
+                                <p class="processing-progress" id="processing-progress">Initializing...</p>
+                            </div>
+                        </div>
+                        <div class="preprocess-options">
+                            <div class="preprocess-option">
+                                <input type="checkbox" id="enhance-contrast" checked>
+                                <label for="enhance-contrast">Enhance contrast</label>
+                            </div>
+                            <div class="preprocess-option">
+                                <input type="checkbox" id="grayscale" checked>
+                                <label for="grayscale">Grayscale</label>
+                            </div>
+                            <div class="preprocess-option">
+                                <input type="checkbox" id="sharpen">
+                                <label for="sharpen">Sharpen text</label>
+                            </div>
+                        </div>
+                        <div class="preview-actions">
+                            <button class="btn btn-secondary" id="cancel-scan-btn">Cancel</button>
+                            <button class="btn btn-primary" id="scan-btn">Scan for Words</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paste Text Panel -->
+                <div class="import-panel" id="import-paste">
+                    <div class="paste-section">
+                        <textarea id="paste-text" placeholder="Paste your vocabulary list here...
+
+Example formats:
+el libro - the book
+casa = house
+perro: dog
+1. gato - cat
+• agua - water"></textarea>
+                        <p class="paste-hint">Supports formats: "word - definition", "word = definition", "word: definition", numbered lists, bullet points</p>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="parse-paste-btn">Parse Words</button>
+                    </div>
+                </div>
+
+                <!-- Extracted Words (shared between both methods) -->
+                <div class="extracted-words" id="extracted-words">
+                    <div class="extracted-header">
+                        <h4>Extracted Words</h4>
+                        <span class="extracted-count" id="extracted-count">0 found</span>
+                    </div>
+                    <div class="select-all-row">
+                        <input type="checkbox" id="select-all" checked>
+                        <label for="select-all">Select all</label>
+                    </div>
+                    <div class="extracted-list" id="extracted-list">
+                        <!-- Extracted words will appear here -->
+                    </div>
+                    <button class="add-row-btn" id="add-row-btn">+ Add another word pair</button>
+                    <div class="raw-ocr-section" id="raw-ocr-section">
+                        <button class="raw-ocr-toggle" id="raw-ocr-toggle">Show raw OCR text</button>
+                        <div class="raw-ocr-text" id="raw-ocr-text" style="display: none;"></div>
+                    </div>
+                    <div class="extracted-actions">
+                        <button class="btn btn-secondary" id="cancel-extracted-btn">Cancel</button>
+                        <button class="btn btn-primary" id="add-extracted-btn">Add Selected Words</button>
+                    </div>
+                </div>
+
+                <div class="ocr-tips" id="ocr-tips">
+                    <h5>Tips for best results</h5>
+                    <ul>
+                        <li>Use clear, well-lit photos of printed text</li>
+                        <li>Crop the image to show only the vocabulary list</li>
+                        <li>Each word pair should be on its own line</li>
+                        <li>Format: "spanish - english" works best</li>
+                    </ul>
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(212, 114, 106, 0.1); border-radius: 6px; border-left: 3px solid var(--error);">
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
+                            <strong>⚠️ Disclaimer:</strong> Smart Scan uses OCR technology which may not always produce perfect results. Handwritten text, unusual fonts, poor image quality, or complex layouts may cause errors. Always review and edit extracted words before adding them to your vocabulary.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="word-list">
+                <h3>Your Words <span class="word-count" id="word-count">(0)</span></h3>
+                <div class="words-grid" id="words-grid">
+                    <div class="empty-state">
+                        <div class="icon">📚</div>
+                        <p>No words yet. Add some vocabulary to get started!</p>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.8rem;">
+                    💾 Your words are automatically saved to your browser
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Panel -->
+        <div class="panel" id="quiz-panel">
+            <div class="quiz-container" id="quiz-container">
+                <!-- Quiz content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Words added successfully!</div>
+    <div class="auto-save-indicator" id="auto-save-indicator">
+        <span class="icon">💾</span>
+        <span>Saved!</span>
+    </div>
+    <canvas id="process-canvas"></canvas>
+
+    <script>
+        // ==================== FIREBASE CONFIGURATION ====================
+        // NOTE: This key is restricted to specific domains in Google Cloud Console.
+        // It only works on authorized origins (localhost + production domain).
+        const firebaseConfig = {
+            apiKey: "AIzaSyAIK2pl9GT3ewwIlmLWZmIyX8vAR1V6Dtg",
+            authDomain: "spanishquiz-ea73d.firebaseapp.com",
+            projectId: "spanishquiz-ea73d",
+            storageBucket: "spanishquiz-ea73d.firebasestorage.app",
+            messagingSenderId: "150776325264",
+            appId: "1:150776325264:web:826e52857a0462dfe92415",
+            measurementId: "G-F71B5F85YZ"
+        };
+
+        // Initialize Firebase
+        let firebaseApp = null;
+        let auth = null;
+        let db = null;
+        let currentUser = null;
+        let unsubscribeVocab = null;
+
+        // Check if Firebase config is set
+        const isFirebaseConfigured = firebaseConfig && firebaseConfig.apiKey;
+
+        // Initialize Firebase if configured
+        if (isFirebaseConfigured) {
+            try {
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                console.log('Firebase initialized successfully');
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+            }
+        } else {
+            console.warn('Firebase not configured. Please add your Firebase credentials.');
+        }
+
+        // State
+        let vocabulary = [];
+        let quizMode = 'spanish-to-english';
+        let currentQuiz = [];
+        let currentIndex = 0;
+        let score = { correct: 0, incorrect: 0 };
+        let answered = false;
+        let extractedWords = [];
+        let rawOcrText = '';
+        let originalImageData = null;
+        let fuzzyMatchingEnabled = true;
+        
+        // Section-based learning
+        let sectionSize = 10; // Words per section
+        let allSections = [];
+        let currentSectionIndex = 0;
+        let currentSectionWords = [];
+        let sectionResults = []; // Track results for each word in current section
+        let incorrectWords = [];
+        let isRetryRound = false;
+        let sectionAttempts = 0;
+
+        // Load vocabulary from localStorage with error handling
+        function loadVocabulary() {
+            try {
+                const saved = localStorage.getItem('spanishVocab');
+                if (saved) {
+                    vocabulary = JSON.parse(saved);
+                    // Validate that vocabulary is an array
+                    if (!Array.isArray(vocabulary)) {
+                        vocabulary = [];
+                    }
+                } else {
+                    vocabulary = [];
+                }
+            } catch (error) {
+                console.warn('Error loading vocabulary from localStorage:', error);
+                vocabulary = [];
+            }
+        }
+
+        // Initialize vocabulary
+        loadVocabulary();
+
+        // DOM Elements
+        const tabs = document.querySelectorAll('.tab');
+        const panels = document.querySelectorAll('.panel');
+        const spanishInput = document.getElementById('spanish-input');
+        const englishInput = document.getElementById('english-input');
+        const addWordBtn = document.getElementById('add-word-btn');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const wordsGrid = document.getElementById('words-grid');
+        const wordCount = document.getElementById('word-count');
+        const quizContainer = document.getElementById('quiz-container');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const processCanvas = document.getElementById('process-canvas');
+        const previewOverlay = document.getElementById('preview-overlay');
+        const processingProgress = document.getElementById('processing-progress');
+        const scanBtn = document.getElementById('scan-btn');
+        const cancelScanBtn = document.getElementById('cancel-scan-btn');
+        const extractedWordsDiv = document.getElementById('extracted-words');
+        const extractedList = document.getElementById('extracted-list');
+        const extractedCount = document.getElementById('extracted-count');
+        const selectAllCheckbox = document.getElementById('select-all');
+        const addExtractedBtn = document.getElementById('add-extracted-btn');
+        const cancelExtractedBtn = document.getElementById('cancel-extracted-btn');
+        const toast = document.getElementById('toast');
+        const autoSaveIndicator = document.getElementById('auto-save-indicator');
+        const importTabs = document.querySelectorAll('.import-tab');
+        const importPanels = document.querySelectorAll('.import-panel');
+        const pasteText = document.getElementById('paste-text');
+        const parsePasteBtn = document.getElementById('parse-paste-btn');
+        const addRowBtn = document.getElementById('add-row-btn');
+        const rawOcrSection = document.getElementById('raw-ocr-section');
+        const rawOcrToggle = document.getElementById('raw-ocr-toggle');
+        const rawOcrTextDiv = document.getElementById('raw-ocr-text');
+        const ocrTips = document.getElementById('ocr-tips');
+
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                panels.forEach(p => p.classList.remove('active'));
+                document.getElementById(`${tab.dataset.tab}-panel`).classList.add('active');
+
+                if (tab.dataset.tab === 'quiz') {
+                    renderQuizStart();
+                }
+            });
+        });
+
+        // Import tab switching
+        importTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                importTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                importPanels.forEach(p => p.classList.remove('active'));
+                document.getElementById(`import-${tab.dataset.import}`).classList.add('active');
+                
+                // Hide extracted words when switching tabs
+                extractedWordsDiv.classList.remove('active');
+                ocrTips.style.display = 'block';
+            });
+        });
+
+        // ==================== WORD CLEANING UTILITIES ====================
+        
+        // Clean a word by removing parentheses, brackets
+        function cleanVocabWord(word) {
+            if (!word) return '';
+            return word
+                .replace(/\s*\([^)]*\)/g, '')      // Remove (anything in parentheses)
+                .replace(/\s*\[[^\]]*\]/g, '')      // Remove [anything in brackets]
+                .replace(/\s*\{[^}]*\}/g, '')       // Remove {anything in braces}
+                .replace(/\s+/g, ' ')               // Normalize whitespace
+                .trim();
+        }
+        
+        // Expand Spanish words with /a, /o, /as, /os endings into multiple words
+        // e.g., "soltero/a" → ["soltero", "soltera"]
+        // e.g., "el/la hermano/a" → ["el hermano", "la hermana"]
+        function expandSpanishWord(word) {
+            if (!word) return [];
+            
+            word = word.trim();
+            
+            // Pattern: word/ending (e.g., soltero/a, hermano/a, chico/a)
+            // Match: base word ending in 'o' or 'e' followed by /a or /as
+            const slashPattern = /^(.+)(o|e)\/([aeo]s?)$/i;
+            const match = word.match(slashPattern);
+            
+            if (match) {
+                const base = match[1];
+                const maleEnding = match[2];
+                const femaleEnding = match[3];
+                return [base + maleEnding, base + femaleEnding];
+            }
+            
+            // Pattern: word/fullword (e.g., el/la)
+            // Check for article patterns like "el/la word" or "un/una word"
+            const articlePattern = /^(el|un|los|unos)\/(la|una|las|unas)\s+(.+)$/i;
+            const articleMatch = word.match(articlePattern);
+            
+            if (articleMatch) {
+                const maleArticle = articleMatch[1];
+                const femaleArticle = articleMatch[2];
+                let noun = articleMatch[3];
+                
+                // Check if noun also has gender variation
+                const nounExpanded = expandSpanishWord(noun);
+                if (nounExpanded.length > 1) {
+                    return [maleArticle + ' ' + nounExpanded[0], femaleArticle + ' ' + nounExpanded[1]];
+                }
+                return [maleArticle + ' ' + noun, femaleArticle + ' ' + noun];
+            }
+            
+            // Simple pattern: just word/a at end (handles most cases)
+            const simplePattern = /^(.+)\/([ao]s?)$/i;
+            const simpleMatch = word.match(simplePattern);
+            
+            if (simpleMatch) {
+                const base = simpleMatch[1];
+                const ending = simpleMatch[2];
+                // If base ends in consonant or vowel other than the ending
+                if (base.endsWith('o')) {
+                    return [base, base.slice(0, -1) + ending];
+                } else if (base.endsWith('e')) {
+                    return [base, base.slice(0, -1) + ending];
+                } else {
+                    return [base, base + ending];
+                }
+            }
+            
+            // No expansion needed
+            return [word];
+        }
+        
+        // Get simple answer for quiz (first part before semicolon)
+        // Returns { simple: "first part", full: "original" }
+        function getSimpleAnswer(definition) {
+            if (!definition) return { simple: '', full: '' };
+            
+            const full = definition.trim();
+            
+            // Split by semicolon and take first part
+            let simple = full.split(';')[0].trim();
+            
+            // Also clean the simple part
+            simple = cleanVocabWord(simple);
+            
+            return { simple, full };
+        }
+        
+        // Process a word pair and return array of word objects to add
+        function processWordPair(spanish, english) {
+            const cleanedEnglish = cleanVocabWord(english);
+            const englishFull = english.trim();
+            
+            // Clean parentheses etc from Spanish but keep /a patterns
+            let cleanedSpanish = spanish
+                .replace(/\s*\([^)]*\)/g, '')
+                .replace(/\s*\[[^\]]*\]/g, '')
+                .replace(/\s*\{[^}]*\}/g, '')
+                .trim();
+            
+            // Expand Spanish variations
+            const spanishVariations = expandSpanishWord(cleanedSpanish);
+            
+            // Create word objects for each variation
+            return spanishVariations.map((sp, index) => ({
+                spanish: cleanVocabWord(sp),
+                english: cleanedEnglish,
+                spanishFull: spanish.trim(),
+                englishFull: englishFull,
+                id: Date.now() + index + Math.random()
+            }));
+        }
+
+        // Add word
+        function addWord() {
+            const spanish = spanishInput.value.trim();
+            const english = englishInput.value.trim();
+
+            if (spanish && english) {
+                const wordEntries = processWordPair(spanish, english);
+                wordEntries.forEach(entry => {
+                    vocabulary.push(entry);
+                });
+                saveVocabulary();
+                renderWordList();
+                spanishInput.value = '';
+                englishInput.value = '';
+                spanishInput.focus();
+                
+                if (wordEntries.length > 1) {
+                    showToast(`Added ${wordEntries.length} words: ${wordEntries.map(w => w.spanish).join(', ')}`);
+                }
+            }
+        }
+
+        addWordBtn.addEventListener('click', addWord);
+
+        // Enter key to add
+        [spanishInput, englishInput].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    if (input === spanishInput && !englishInput.value) {
+                        englishInput.focus();
+                    } else {
+                        addWord();
+                    }
+                }
+            });
+        });
+
+        // Clear all
+        clearAllBtn.addEventListener('click', () => {
+            if (vocabulary.length && confirm('Are you sure you want to clear all words?')) {
+                vocabulary = [];
+                saveVocabulary();
+                renderWordList();
+            }
+        });
+
+        // Delete word
+        function deleteWord(id) {
+            vocabulary = vocabulary.filter(w => w.id !== id);
+            saveVocabulary();
+            renderWordList();
+        }
+
+        // Edit word
+        let editingWordId = null;
+
+        function editWord(id) {
+            editingWordId = id;
+            renderWordList();
+        }
+
+        function saveEdit(id) {
+            const word = vocabulary.find(w => w.id === id);
+            const spanishInput = document.querySelector(`input[data-edit-id="${id}"][data-field="spanish"]`);
+            const englishInput = document.querySelector(`input[data-edit-id="${id}"][data-field="english"]`);
+            
+            const newSpanish = spanishInput.value.trim();
+            const newEnglish = englishInput.value.trim();
+            
+            if (newSpanish && newEnglish) {
+                word.spanish = newSpanish;
+                word.english = newEnglish;
+                saveVocabulary();
+                editingWordId = null;
+                renderWordList();
+                showToast('Word updated!');
+            } else {
+                alert('Both Spanish and English fields must be filled.');
+            }
+        }
+
+        function cancelEdit() {
+            editingWordId = null;
+            renderWordList();
+        }
+
+        // Save to localStorage with error handling
+        function saveVocabulary() {
+            try {
+                localStorage.setItem('spanishVocab', JSON.stringify(vocabulary));
+                console.log(`Saved ${vocabulary.length} words to localStorage`);
+
+                // Show auto-save indicator
+                showAutoSaveIndicator();
+
+            } catch (error) {
+                console.error('Error saving vocabulary to localStorage:', error);
+                // Try to show user-friendly error
+                showToast('❌ Error saving words - localStorage may be full');
+            }
+        }
+
+        // Show auto-save indicator
+        function showAutoSaveIndicator() {
+            autoSaveIndicator.classList.add('show');
+            setTimeout(() => {
+                autoSaveIndicator.classList.remove('show');
+            }, 2000);
+        }
+
+        // Render word list
+        function renderWordList() {
+            wordCount.textContent = `(${vocabulary.length})`;
+
+            if (vocabulary.length === 0) {
+                wordsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📚</div>
+                        <p>No words yet. Add some vocabulary to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            wordsGrid.innerHTML = vocabulary.map(word => {
+                if (word.id === editingWordId) {
+                    // Edit mode
+                    return `
+                        <div class="word-item editing">
+                            <div class="word-pair">
+                                <input type="text" class="edit-input spanish" value="${escapeHtml(word.spanish)}" 
+                                       data-edit-id="${word.id}" data-field="spanish" placeholder="Spanish">
+                                <input type="text" class="edit-input" value="${escapeHtml(word.english)}" 
+                                       data-edit-id="${word.id}" data-field="english" placeholder="English">
+                            </div>
+                            <div class="edit-actions">
+                                <button class="btn btn-primary btn-small" onclick="saveEdit(${word.id})">Save</button>
+                                <button class="btn btn-secondary btn-small" onclick="cancelEdit()">Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Normal mode
+                    return `
+                        <div class="word-item">
+                            <div class="word-pair">
+                                <span class="spanish-word">${escapeHtml(word.spanish)}</span>
+                                <span class="arrow">→</span>
+                                <span class="english-word">${escapeHtml(word.english)}</span>
+                            </div>
+                            <div class="word-actions">
+                                <button class="edit-btn" onclick="editWord(${word.id})" title="Edit">✏️</button>
+                                <button class="delete-btn" onclick="deleteWord(${word.id})" title="Delete">×</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            // Add keyboard listeners for edit inputs
+            if (editingWordId) {
+                const inputs = wordsGrid.querySelectorAll('.edit-input');
+                inputs.forEach((input, index) => {
+                    // Enter key to move to next field or save
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (index === 0) {
+                                // On first input, move to second
+                                inputs[1].focus();
+                            } else {
+                                // On second input, save
+                                saveEdit(editingWordId);
+                            }
+                        }
+                    });
+                    // Escape key to cancel
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelEdit();
+                        }
+                    });
+                });
+                // Focus first input
+                if (inputs[0]) inputs[0].focus();
+            }
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== IMAGE PROCESSING ====================
+
+        function preprocessImage(img) {
+            const canvas = processCanvas;
+            const ctx = canvas.getContext('2d');
+            
+            // Scale up small images for better OCR
+            let width = img.naturalWidth || img.width;
+            let height = img.naturalHeight || img.height;
+            const minDimension = 1500;
+            
+            if (width < minDimension || height < minDimension) {
+                const scale = Math.max(minDimension / width, minDimension / height);
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Get image data
+            let imageData = ctx.getImageData(0, 0, width, height);
+            let data = imageData.data;
+            
+            const doGrayscale = document.getElementById('grayscale').checked;
+            const doContrast = document.getElementById('enhance-contrast').checked;
+            const doSharpen = document.getElementById('sharpen').checked;
+            
+            // Convert to grayscale
+            if (doGrayscale) {
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    data[i] = gray;
+                    data[i + 1] = gray;
+                    data[i + 2] = gray;
+                }
+            }
+            
+            // Enhance contrast
+            if (doContrast) {
+                const factor = 1.5; // Contrast factor
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
+                    data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+                    data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            
+            // Sharpen using convolution (simplified approach)
+            if (doSharpen) {
+                // Apply unsharp mask effect
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.filter = 'contrast(1.1) brightness(1.05)';
+                ctx.drawImage(canvas, 0, 0);
+                ctx.filter = 'none';
+            }
+            
+            // Update preview canvas
+            const previewCtx = previewCanvas.getContext('2d');
+            const previewWidth = Math.min(width, 800);
+            const previewHeight = (height / width) * previewWidth;
+            previewCanvas.width = previewWidth;
+            previewCanvas.height = previewHeight;
+            previewCtx.drawImage(canvas, 0, 0, previewWidth, previewHeight);
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        // Drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        });
+
+        function handleImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    previewImg.src = e.target.result;
+                    originalImageData = img;
+                    
+                    // Apply initial preprocessing
+                    preprocessImage(img);
+                    
+                    dropZone.style.display = 'none';
+                    imagePreview.classList.add('active');
+                    extractedWordsDiv.classList.remove('active');
+                    previewOverlay.classList.remove('active');
+                    scanBtn.disabled = false;
+                    ocrTips.style.display = 'none';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Update preview when preprocessing options change
+        document.querySelectorAll('.preprocess-option input').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                if (originalImageData) {
+                    preprocessImage(originalImageData);
+                }
+            });
+        });
+
+        cancelScanBtn.addEventListener('click', () => {
+            resetUpload();
+        });
+
+        function resetUpload() {
+            dropZone.style.display = 'block';
+            imagePreview.classList.remove('active');
+            extractedWordsDiv.classList.remove('active');
+            rawOcrSection.classList.remove('active');
+            ocrTips.style.display = 'block';
+            fileInput.value = '';
+            previewImg.src = '';
+            originalImageData = null;
+            rawOcrText = '';
+        }
+
+        // ==================== OCR SCANNING ====================
+
+        scanBtn.addEventListener('click', async () => {
+            scanBtn.disabled = true;
+            previewOverlay.classList.add('active');
+            processingProgress.textContent = 'Loading OCR engine...';
+
+            try {
+                // Get preprocessed image
+                const processedImageUrl = processCanvas.toDataURL('image/png');
+                
+                const result = await Tesseract.recognize(
+                    processedImageUrl,
+                    'eng+spa',
+                    {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                const percent = Math.round(m.progress * 100);
+                                processingProgress.textContent = `Scanning... ${percent}%`;
+                            } else if (m.status === 'loading language traineddata') {
+                                processingProgress.textContent = 'Loading language data...';
+                            } else {
+                                processingProgress.textContent = m.status;
+                            }
+                        }
+                    }
+                );
+
+                rawOcrText = result.data.text;
+                parseExtractedText(rawOcrText);
+                
+                previewOverlay.classList.remove('active');
+                imagePreview.classList.remove('active');
+                extractedWordsDiv.classList.add('active');
+                rawOcrSection.classList.add('active');
+                rawOcrTextDiv.textContent = rawOcrText;
+                
+            } catch (error) {
+                console.error('OCR Error:', error);
+                processingProgress.textContent = 'Error scanning image. Try again.';
+                setTimeout(() => {
+                    previewOverlay.classList.remove('active');
+                    scanBtn.disabled = false;
+                }, 2000);
+            }
+        });
+
+        // Raw OCR text toggle
+        rawOcrToggle.addEventListener('click', () => {
+            const isHidden = rawOcrTextDiv.style.display === 'none';
+            rawOcrTextDiv.style.display = isHidden ? 'block' : 'none';
+            rawOcrToggle.textContent = isHidden ? 'Hide raw OCR text' : 'Show raw OCR text';
+        });
+
+        // ==================== ADVANCED TEXT PARSING (Smart Scan Pro) ====================
+        
+        // Common Spanish characters and patterns for language detection
+        const SPANISH_PATTERNS = /[áéíóúüñ¿¡]/i;
+        const SPANISH_ARTICLES = /^(el|la|los|las|un|una|unos|unas)\s/i;
+        const SPANISH_VERBS = /(ar|er|ir|arse|erse|irse)$/i;
+        const ENGLISH_PATTERNS = /\b(the|a|an|to|is|are|was|were|been|being|have|has|had|do|does|did)\b/i;
+        
+        // Common OCR errors and fixes
+        const OCR_FIXES = {
+            'l': ['I', '1', '|'],
+            'O': ['0'],
+            '0': ['O'],
+            'I': ['l', '1', '|'],
+            '1': ['l', 'I', '|'],
+            'rn': ['m'],
+            'vv': ['w'],
+            'cl': ['d'],
+            'ii': ['ü'],
+            "'": [''', ''', '`'],
+            '"': ['"', '"', '„'],
+            '-': ['–', '—', '−', '‐', '‑'],
+            '...': ['…'],
+            'fi': ['fi'],
+            'fl': ['fl'],
+        };
+
+        function parseExtractedText(text) {
+            extractedWords = [];
+            
+            // Advanced text preprocessing
+            let cleanText = advancedTextCleanup(text);
+            
+            // Try multiple parsing strategies and combine results
+            const strategies = [
+                parseWithSeparators,
+                parseWithColumnDetection,
+                parseWithPatternMatching,
+                parseWithLanguageDetection,
+                parseWithContextualAnalysis,
+                parseWithFlexibleMatching
+            ];
+            
+            let allResults = [];
+            
+            for (const strategy of strategies) {
+                try {
+                    const results = strategy(cleanText);
+                    allResults = allResults.concat(results);
+                } catch (e) {
+                    console.warn('Parsing strategy failed:', e);
+                }
+            }
+            
+            // Deduplicate and score results
+            extractedWords = deduplicateAndScore(allResults);
+            
+            renderExtractedWords();
+        }
+        
+        // Advanced text cleanup with OCR error correction
+        function advancedTextCleanup(text) {
+            let cleaned = text
+                // Normalize line endings
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                // Normalize unicode characters
+                .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, ' ') // Various spaces
+                .replace(/[""„"]/g, '"')
+                .replace(/[''`']/g, "'")
+                .replace(/[…]/g, '...')
+                .replace(/[—–−‐‑]/g, '-')
+                .replace(/[→⟶⇒►▶]/g, ' → ')
+                .replace(/[←⟵⇐◄◀]/g, ' ← ')
+                // Fix common OCR ligatures
+                .replace(/ﬁ/g, 'fi')
+                .replace(/ﬂ/g, 'fl')
+                .replace(/ﬀ/g, 'ff')
+                .replace(/ﬃ/g, 'ffi')
+                .replace(/ﬄ/g, 'ffl')
+                // Normalize tabs
+                .replace(/\t+/g, '\t')
+                // Fix spacing around punctuation
+                .replace(/\s+([,;:.])/g, '$1')
+                .replace(/([,;:])\s*/g, '$1 ')
+                // Fix Spanish special characters that OCR often misses
+                .replace(/n~/g, 'ñ')
+                .replace(/~n/g, 'ñ')
+                // Remove page numbers and headers
+                .replace(/^[\s]*\d+[\s]*$/gm, '')
+                .replace(/^[\s]*(page|pagina|pág)\s*\d+[\s]*$/gim, '')
+                // Normalize whitespace
+                .replace(/[ ]{2,}/g, '  ') // Keep double spaces as potential separators
+                .replace(/\n{3,}/g, '\n\n');
+            
+            return cleaned;
+        }
+        
+        // Strategy 1: Parse using various separators (enhanced)
+        function parseWithSeparators(text) {
+            const results = [];
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            // Expanded separator patterns (ordered by reliability)
+            const separators = [
+                { pattern: /\s+[-–—]\s+/, name: 'dash-spaced' },
+                { pattern: /\s*[=]\s*/, name: 'equals' },
+                { pattern: /\s*[:]\s+/, name: 'colon' },
+                { pattern: /\s+[→⟶]\s+/, name: 'arrow' },
+                { pattern: /\t+/, name: 'tab' },
+                { pattern: /\s{3,}/, name: 'multi-space' },
+                { pattern: /\s*[|]\s*/, name: 'pipe' },
+                { pattern: /\s*[\/]\s+/, name: 'slash-spaced' },
+                { pattern: /\s+[~]\s+/, name: 'tilde' },
+                { pattern: /\)\s*/, name: 'paren-end' }, // For "1) word - definition"
+            ];
+            
+            for (let line of lines) {
+                line = preprocessLine(line);
+                if (!line || line.length < 3) continue;
+                if (isHeaderOrNoise(line)) continue;
+                
+                for (const sep of separators) {
+                    const parts = line.split(sep.pattern).map(p => p.trim()).filter(p => p);
+                    
+                    if (parts.length >= 2) {
+                        const spanish = cleanWordAdvanced(parts[0]);
+                        const english = cleanWordAdvanced(parts.slice(1).join(' '));
+                        
+                        if (isValidWordPairAdvanced(spanish, english)) {
+                            results.push({
+                                spanish,
+                                english,
+                                confidence: getConfidence(spanish, english, sep.name),
+                                source: 'separator-' + sep.name
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        // Strategy 2: Detect column-based layouts
+        function parseWithColumnDetection(text) {
+            const results = [];
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            // Detect if text has consistent column positions
+            const columnPositions = detectColumns(lines);
+            
+            if (columnPositions.length >= 2) {
+                for (const line of lines) {
+                    if (isHeaderOrNoise(line)) continue;
+                    
+                    const parts = splitByColumns(line, columnPositions);
+                    if (parts.length >= 2) {
+                        const spanish = cleanWordAdvanced(parts[0]);
+                        const english = cleanWordAdvanced(parts.slice(1).join(' '));
+                        
+                        if (isValidWordPairAdvanced(spanish, english)) {
+                            results.push({
+                                spanish,
+                                english,
+                                confidence: 0.8,
+                                source: 'column-detection'
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        // Detect column positions based on spacing patterns
+        function detectColumns(lines) {
+            const spacePositions = {};
+            
+            for (const line of lines) {
+                for (let i = 0; i < line.length; i++) {
+                    if (line[i] === ' ' && i > 0 && line[i-1] !== ' ') {
+                        spacePositions[i] = (spacePositions[i] || 0) + 1;
+                    }
+                }
+            }
+            
+            // Find positions where many lines have spaces
+            const threshold = Math.max(3, lines.length * 0.3);
+            return Object.entries(spacePositions)
+                .filter(([_, count]) => count >= threshold)
+                .map(([pos]) => parseInt(pos))
+                .sort((a, b) => a - b);
+        }
+        
+        function splitByColumns(line, positions) {
+            const parts = [];
+            let lastPos = 0;
+            
+            for (const pos of positions) {
+                if (pos < line.length) {
+                    const part = line.substring(lastPos, pos).trim();
+                    if (part) parts.push(part);
+                    lastPos = pos;
+                }
+            }
+            
+            const remaining = line.substring(lastPos).trim();
+            if (remaining) parts.push(remaining);
+            
+            return parts;
+        }
+        
+        // Strategy 3: Pattern matching for common vocabulary formats
+        function parseWithPatternMatching(text) {
+            const results = [];
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            // Common vocabulary list patterns
+            const patterns = [
+                // "1. word - definition" or "1) word - definition"
+                /^[\d]+[.\)]\s*(.+?)\s*[-–—]\s*(.+)$/,
+                // "• word - definition" or "- word - definition"
+                /^[•\-\*►]\s*(.+?)\s*[-–—:]\s*(.+)$/,
+                // "word (n.) - definition" or "word [adj] - definition"
+                /^(.+?)\s*[\(\[][^)\]]+[\)\]]\s*[-–—:]\s*(.+)$/,
+                // "word = definition"
+                /^(.+?)\s*[=]\s*(.+)$/,
+                // "word: definition"
+                /^([^:]+?):\s+(.+)$/,
+                // "word → definition"
+                /^(.+?)\s*[→⟶]\s*(.+)$/,
+                // "word / definition" (Quizlet style)
+                /^(.+?)\s*\/\s*(.+)$/,
+                // "word | definition"
+                /^(.+?)\s*[|]\s*(.+)$/,
+                // "word.....definition" (dot leaders)
+                /^(.+?)[.]{2,}\s*(.+)$/,
+                // Parenthetical definition: "word (definition)"
+                /^([^(]+?)\s*\(([^)]+)\)$/,
+            ];
+            
+            for (const line of lines) {
+                const cleanLine = preprocessLine(line);
+                if (!cleanLine || isHeaderOrNoise(cleanLine)) continue;
+                
+                for (const pattern of patterns) {
+                    const match = cleanLine.match(pattern);
+                    if (match && match[1] && match[2]) {
+                        const spanish = cleanWordAdvanced(match[1]);
+                        const english = cleanWordAdvanced(match[2]);
+                        
+                        if (isValidWordPairAdvanced(spanish, english)) {
+                            results.push({
+                                spanish,
+                                english,
+                                confidence: 0.85,
+                                source: 'pattern-matching'
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        // Strategy 4: Use language detection to identify Spanish vs English
+        function parseWithLanguageDetection(text) {
+            const results = [];
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            for (let line of lines) {
+                line = preprocessLine(line);
+                if (!line || isHeaderOrNoise(line)) continue;
+                
+                // Split line into potential word groups
+                const parts = line.split(/\s{2,}|\t|[-–—]|[=]|[:]|[|]/).map(p => p.trim()).filter(p => p);
+                
+                if (parts.length >= 2) {
+                    // Detect which part is Spanish and which is English
+                    let spanishPart = null;
+                    let englishPart = null;
+                    
+                    for (const part of parts) {
+                        const spanishScore = getSpanishScore(part);
+                        const englishScore = getEnglishScore(part);
+                        
+                        if (spanishScore > englishScore && !spanishPart) {
+                            spanishPart = part;
+                        } else if (englishScore >= spanishScore && !englishPart) {
+                            englishPart = part;
+                        }
+                    }
+                    
+                    // If we couldn't determine, assume first is Spanish
+                    if (!spanishPart && !englishPart && parts.length === 2) {
+                        spanishPart = parts[0];
+                        englishPart = parts[1];
+                    }
+                    
+                    if (spanishPart && englishPart) {
+                        const spanish = cleanWordAdvanced(spanishPart);
+                        const english = cleanWordAdvanced(englishPart);
+                        
+                        if (isValidWordPairAdvanced(spanish, english)) {
+                            results.push({
+                                spanish,
+                                english,
+                                confidence: 0.7,
+                                source: 'language-detection'
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        // Strategy 5: Contextual analysis - look at surrounding lines for patterns
+        function parseWithContextualAnalysis(text) {
+            const results = [];
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            // Find the most common separator in the text
+            const separatorCounts = {
+                ' - ': (text.match(/ - /g) || []).length,
+                ' = ': (text.match(/ = /g) || []).length,
+                ': ': (text.match(/: /g) || []).length,
+                '\t': (text.match(/\t/g) || []).length,
+                ' | ': (text.match(/ \| /g) || []).length,
+            };
+            
+            const dominantSep = Object.entries(separatorCounts)
+                .sort((a, b) => b[1] - a[1])[0];
+            
+            if (dominantSep && dominantSep[1] > 2) {
+                const sepPattern = new RegExp(dominantSep[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+                
+                for (const line of lines) {
+                    const cleanLine = preprocessLine(line);
+                    if (!cleanLine || isHeaderOrNoise(cleanLine)) continue;
+                    
+                    const parts = cleanLine.split(sepPattern).map(p => p.trim()).filter(p => p);
+                    
+                    if (parts.length >= 2) {
+                        const spanish = cleanWordAdvanced(parts[0]);
+                        const english = cleanWordAdvanced(parts.slice(1).join(' '));
+                        
+                        if (isValidWordPairAdvanced(spanish, english)) {
+                            results.push({
+                                spanish,
+                                english,
+                                confidence: 0.9,
+                                source: 'contextual-dominant-sep'
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        // Strategy 6: Flexible matching for difficult cases
+        function parseWithFlexibleMatching(text) {
+            const results = [];
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            for (let line of lines) {
+                line = preprocessLine(line);
+                if (!line || line.length < 5 || isHeaderOrNoise(line)) continue;
+                
+                // Try to find any reasonable split point
+                const words = line.split(/\s+/);
+                
+                if (words.length >= 2 && words.length <= 10) {
+                    // Try splitting at each position
+                    for (let splitAt = 1; splitAt < words.length; splitAt++) {
+                        const leftPart = words.slice(0, splitAt).join(' ');
+                        const rightPart = words.slice(splitAt).join(' ');
+                        
+                        // Check if this creates a valid pair
+                        const leftSpanish = getSpanishScore(leftPart);
+                        const rightEnglish = getEnglishScore(rightPart);
+                        
+                        if (leftSpanish > 0.3 && rightEnglish > 0.3) {
+                            const spanish = cleanWordAdvanced(leftPart);
+                            const english = cleanWordAdvanced(rightPart);
+                            
+                            if (isValidWordPairAdvanced(spanish, english)) {
+                                results.push({
+                                    spanish,
+                                    english,
+                                    confidence: 0.5,
+                                    source: 'flexible-split'
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        // Calculate Spanish language score
+        function getSpanishScore(text) {
+            let score = 0;
+            const lower = text.toLowerCase();
+            
+            if (SPANISH_PATTERNS.test(text)) score += 0.4;
+            if (SPANISH_ARTICLES.test(text)) score += 0.3;
+            if (SPANISH_VERBS.test(lower)) score += 0.2;
+            if (/^(ser|estar|tener|hacer|ir|poder|decir|ver|dar|saber|querer|llegar|pasar|deber|poner|parecer|quedar|creer|hablar|llevar|dejar|seguir|encontrar|llamar|venir|pensar|salir|volver|tomar|conocer|vivir|sentir|tratar|mirar|contar|empezar|esperar|buscar|existir|entrar|trabajar|escribir|perder|producir|ocurrir|entender|pedir|recibir|recordar|terminar|permitir|aparecer|conseguir|comenzar|servir|sacar|necesitar|mantener|resultar|leer|caer|cambiar|presentar|crear|abrir|considerar|oír|acabar|convertir|ganar|formar)\b/i.test(lower)) score += 0.3;
+            
+            // Penalize if it looks English
+            if (ENGLISH_PATTERNS.test(text)) score -= 0.3;
+            
+            return Math.max(0, Math.min(1, score));
+        }
+        
+        // Calculate English language score  
+        function getEnglishScore(text) {
+            let score = 0;
+            const lower = text.toLowerCase();
+            
+            if (ENGLISH_PATTERNS.test(text)) score += 0.4;
+            if (/^(to\s|the\s|a\s|an\s)/i.test(text)) score += 0.3;
+            if (/\b(ing|tion|sion|ness|ment|able|ible|ful|less|ly)$/i.test(lower)) score += 0.2;
+            
+            // Penalize if it looks Spanish
+            if (SPANISH_PATTERNS.test(text)) score -= 0.3;
+            if (SPANISH_ARTICLES.test(text)) score -= 0.2;
+            
+            return Math.max(0, Math.min(1, score));
+        }
+        
+        // Preprocess a single line
+        function preprocessLine(line) {
+            return line
+                .replace(/^[\d]+[.\):\-]\s*/, '')       // Remove numbering
+                .replace(/^[•\-\*\+►▪◦○●]\s*/, '')     // Remove bullets
+                .replace(/^[a-z][.\)]\s*/i, '')         // Remove letter numbering
+                .replace(/^\s*\[[\d]+\]\s*/, '')        // Remove [1] style
+                .replace(/\s*\[[\d]+\]\s*$/, '')        // Remove trailing [1]
+                .trim();
+        }
+        
+        // Check if line is header or noise
+        function isHeaderOrNoise(line) {
+            const lower = line.toLowerCase();
+            const noisePatterns = [
+                /^(chapter|unit|lesson|section|part|module)\s*[\d:]/i,
+                /^(vocabulary|vocab|words|terms|glossary|definitions?)/i,
+                /^(spanish|english|español|inglés)\s*$/i,
+                /^(page|pagina|pág)\s*\d/i,
+                /^[\d\s\-_.]+$/,  // Just numbers and punctuation
+                /^[A-Z]{2,}$/,    // All caps abbreviations
+                /^(answer|respuesta|translation|traducción)/i,
+                /copyright|©|\d{4}/i,
+                /^(name|nombre|date|fecha|class|clase)/i,
+            ];
+            
+            return noisePatterns.some(pattern => pattern.test(lower));
+        }
+        
+        // Advanced word cleaning
+        function cleanWordAdvanced(word) {
+            if (!word) return '';
+            
+            return word
+                // Remove surrounding quotes and brackets
+                .replace(/^["'\[\(\{<«»]+/, '')
+                .replace(/["'\]\)\}>«»]+$/, '')
+                // Remove leading/trailing punctuation (except Spanish ¿¡)
+                .replace(/^[.,;:!?\-–—_]+/, '')
+                .replace(/[.,;:\-–—_]+$/, '')
+                // Keep Spanish punctuation if at start
+                .replace(/^([¿¡])?\s*/, '$1')
+                // Normalize whitespace
+                .replace(/\s+/g, ' ')
+                // Remove parenthetical grammar notes like (n.), (adj.), (v.)
+                .replace(/\s*\([nmfvadj]+\.?\)\s*/gi, ' ')
+                .replace(/\s*\[[nmfvadj]+\.?\]\s*/gi, ' ')
+                .trim();
+        }
+        
+        // Advanced validation
+        function isValidWordPairAdvanced(spanish, english) {
+            if (!spanish || !english) return false;
+            if (spanish.length < 1 || english.length < 1) return false;
+            
+            // Neither should be just punctuation or numbers
+            if (/^[\d\W]+$/.test(spanish) || /^[\d\W]+$/.test(english)) return false;
+            
+            // Should have at least one letter
+            if (!/[a-záéíóúüñ]/i.test(spanish) || !/[a-z]/i.test(english)) return false;
+            
+            // Shouldn't be too similar (probably same language)
+            if (spanish.toLowerCase() === english.toLowerCase()) return false;
+            
+            // Reasonable length
+            if (spanish.length > 100 || english.length > 200) return false;
+            
+            return true;
+        }
+        
+        // Calculate confidence score
+        function getConfidence(spanish, english, source) {
+            let confidence = 0.7;
+            
+            // Boost if Spanish has Spanish characters
+            if (SPANISH_PATTERNS.test(spanish)) confidence += 0.1;
+            
+            // Boost if languages seem correct
+            if (getSpanishScore(spanish) > 0.3) confidence += 0.1;
+            if (getEnglishScore(english) > 0.3) confidence += 0.1;
+            
+            // Adjust based on source
+            const sourceBoosts = {
+                'dash-spaced': 0.1,
+                'tab': 0.1,
+                'equals': 0.05,
+                'colon': 0.05,
+                'pattern-matching': 0.1,
+                'contextual-dominant-sep': 0.15,
+            };
+            
+            confidence += sourceBoosts[source] || 0;
+            
+            return Math.min(1, confidence);
+        }
+        
+        // Deduplicate results and keep highest confidence versions
+        function deduplicateAndScore(results) {
+            const seen = new Map();
+            
+            for (const result of results) {
+                const key = result.spanish.toLowerCase() + '|||' + result.english.toLowerCase();
+                
+                if (!seen.has(key) || seen.get(key).confidence < result.confidence) {
+                    seen.set(key, result);
+                }
+            }
+            
+            // Convert to array and sort by confidence
+            return Array.from(seen.values())
+                .sort((a, b) => b.confidence - a.confidence)
+                .map(r => ({
+                    spanish: r.spanish,
+                    english: r.english,
+                    selected: r.confidence > 0.5,
+                    id: Date.now() + Math.random(),
+                    confidence: r.confidence
+                }));
+        }
+        
+        // Legacy functions for compatibility
+        function cleanWord(word) {
+            return cleanWordAdvanced(word);
+        }
+
+        function isValidWordPair(spanish, english) {
+            return isValidWordPairAdvanced(spanish, english);
+        }
+
+        // ==================== PASTE TEXT PARSING ====================
+
+        parsePasteBtn.addEventListener('click', () => {
+            const text = pasteText.value.trim();
+            if (!text) {
+                alert('Please paste some text first.');
+                return;
+            }
+            
+            rawOcrText = text;
+            parseExtractedText(text);
+            
+            if (extractedWords.length > 0) {
+                extractedWordsDiv.classList.add('active');
+                rawOcrSection.classList.add('active');
+                rawOcrTextDiv.textContent = text;
+                ocrTips.style.display = 'none';
+            } else {
+                alert('Could not find any word pairs. Make sure each line has a Spanish word and English translation separated by a dash (-), equals (=), or colon (:).');
+            }
+        });
+
+        // ==================== EXTRACTED WORDS UI ====================
+
+        function renderExtractedWords() {
+            extractedCount.textContent = `${extractedWords.length} found`;
+
+            if (extractedWords.length === 0) {
+                extractedList.innerHTML = `
+                    <div class="empty-state" style="padding: 1.5rem;">
+                        <p>No word pairs detected. Try adjusting the image or use "Paste Text" instead.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            extractedList.innerHTML = extractedWords.map((word, index) => `
+                <div class="extracted-item" data-index="${index}">
+                    <input type="checkbox" ${word.selected ? 'checked' : ''} data-index="${index}" class="word-checkbox">
+                    <div class="word-inputs">
+                        <input type="text" class="spanish-input" value="${escapeHtml(word.spanish)}" data-index="${index}" data-field="spanish" placeholder="Spanish">
+                        <input type="text" value="${escapeHtml(word.english)}" data-index="${index}" data-field="english" placeholder="English">
+                    </div>
+                    <button class="delete-extracted" data-index="${index}">×</button>
+                </div>
+            `).join('');
+
+            // Add event listeners
+            attachExtractedListeners();
+        }
+
+        function attachExtractedListeners() {
+            extractedList.querySelectorAll('.word-checkbox').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    extractedWords[index].selected = e.target.checked;
+                    updateSelectAll();
+                });
+            });
+
+            extractedList.querySelectorAll('input[type="text"]').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    const field = e.target.dataset.field;
+                    extractedWords[index][field] = e.target.value;
+                });
+            });
+
+            extractedList.querySelectorAll('.delete-extracted').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    extractedWords.splice(index, 1);
+                    renderExtractedWords();
+                });
+            });
+        }
+
+        function updateSelectAll() {
+            const allSelected = extractedWords.length > 0 && extractedWords.every(w => w.selected);
+            const someSelected = extractedWords.some(w => w.selected);
+            selectAllCheckbox.checked = allSelected;
+            selectAllCheckbox.indeterminate = someSelected && !allSelected;
+        }
+
+        selectAllCheckbox.addEventListener('change', (e) => {
+            extractedWords.forEach(w => w.selected = e.target.checked);
+            renderExtractedWords();
+        });
+
+        // Add new row
+        addRowBtn.addEventListener('click', () => {
+            extractedWords.push({
+                spanish: '',
+                english: '',
+                selected: true,
+                id: Date.now() + Math.random()
+            });
+            renderExtractedWords();
+            
+            // Focus the new Spanish input
+            const inputs = extractedList.querySelectorAll('.spanish-input');
+            if (inputs.length > 0) {
+                inputs[inputs.length - 1].focus();
+            }
+        });
+
+        cancelExtractedBtn.addEventListener('click', () => {
+            extractedWordsDiv.classList.remove('active');
+            rawOcrSection.classList.remove('active');
+            resetUpload();
+            pasteText.value = '';
+            ocrTips.style.display = 'block';
+        });
+
+        addExtractedBtn.addEventListener('click', () => {
+            const selectedWords = extractedWords.filter(w => w.selected && w.spanish.trim() && w.english.trim());
+            
+            if (selectedWords.length === 0) {
+                alert('Please select at least one word pair with both Spanish and English filled in.');
+                return;
+            }
+
+            let totalAdded = 0;
+            selectedWords.forEach(word => {
+                const wordEntries = processWordPair(word.spanish.trim(), word.english.trim());
+                wordEntries.forEach(entry => {
+                    vocabulary.push(entry);
+                    totalAdded++;
+                });
+            });
+
+            saveVocabulary();
+            renderWordList();
+            extractedWordsDiv.classList.remove('active');
+            rawOcrSection.classList.remove('active');
+            resetUpload();
+            pasteText.value = '';
+            ocrTips.style.display = 'block';
+            showToast(`${totalAdded} word${totalAdded > 1 ? 's' : ''} added!`);
+        });
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ==================== QUIZ FUNCTIONALITY ====================
+
+        // Fisher-Yates shuffle algorithm for proper randomization
+        function shuffle(array) {
+            const shuffled = [...array];
+            // Shuffle from end to beginning for true randomness
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                // Pick a random index from 0 to i
+                const j = Math.floor(Math.random() * (i + 1));
+                // Swap elements
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function renderQuizStart() {
+            if (vocabulary.length === 0) {
+                quizContainer.innerHTML = `
+                    <div class="no-words-message">
+                        <h3>No vocabulary words yet!</h3>
+                        <p>Add some words in the "Add Words" tab to start quizzing.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            quizContainer.innerHTML = `
+                <div class="mode-selection">
+                    <button class="mode-btn ${quizMode === 'spanish-to-english' ? 'active' : ''}" data-mode="spanish-to-english">
+                        <h4>Spanish → English</h4>
+                        <p>See Spanish, type English</p>
+                    </button>
+                    <button class="mode-btn ${quizMode === 'english-to-spanish' ? 'active' : ''}" data-mode="english-to-spanish">
+                        <h4>English → Spanish</h4>
+                        <p>See English, type Spanish</p>
+                    </button>
+                </div>
+                <div class="quiz-settings" style="margin-bottom: 1.5rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border);">
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="checkbox" id="fuzzy-matching-toggle" ${fuzzyMatchingEnabled ? 'checked' : ''} style="accent-color: var(--accent);">
+                            <label for="fuzzy-matching-toggle" style="color: var(--text-secondary); font-size: 0.9rem; cursor: pointer;">
+                                Enable flexible answers <span style="color: var(--text-muted); font-size: 0.8rem;">(accepts close matches, synonyms, etc.)</span>
+                            </label>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <label for="section-size" style="color: var(--text-secondary); font-size: 0.9rem;">Words per section:</label>
+                            <select id="section-size" style="padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-family: 'DM Sans', sans-serif;">
+                                <option value="5">5 words</option>
+                                <option value="10" selected>10 words</option>
+                                <option value="15">15 words</option>
+                                <option value="20">20 words</option>
+                                <option value="0">All at once</option>
+                            </select>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">(practice in small sections)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="quiz-card">
+                    <div class="quiz-prompt">Ready to practice?</div>
+                    <div class="quiz-word">${vocabulary.length} words</div>
+                    <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
+                </div>
+            `;
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    quizMode = btn.dataset.mode;
+                });
+            });
+
+            // Fuzzy matching toggle
+            document.getElementById('fuzzy-matching-toggle').addEventListener('change', (e) => {
+                fuzzyMatchingEnabled = e.target.checked;
+            });
+
+            // Section size selector
+            document.getElementById('section-size').addEventListener('change', (e) => {
+                sectionSize = parseInt(e.target.value);
+            });
+
+            document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
+        }
+
+        function startQuiz() {
+            // RANDOMIZATION STEP 1: Shuffle all vocabulary words
+            const shuffled = shuffle(vocabulary);
+            
+            // If section size is 0, do all at once (classic mode)
+            if (sectionSize === 0 || vocabulary.length <= sectionSize) {
+                // Classic mode - all words at once, already shuffled
+                currentQuiz = shuffled;
+                currentIndex = 0;
+                score = { correct: 0, incorrect: 0 };
+                answered = false;
+                allSections = [];
+                renderQuestion();
+            } else {
+                // Section-based mode
+                // RANDOMIZATION STEP 2: Divide shuffled words into sections
+                // This ensures each section gets a random mix of words
+                allSections = [];
+                for (let i = 0; i < shuffled.length; i += sectionSize) {
+                    allSections.push(shuffled.slice(i, i + sectionSize));
+                }
+                
+                currentSectionIndex = 0;
+                // RANDOMIZATION STEP 3: startSection() will shuffle words within each section
+                startSection();
+            }
+        }
+
+        // Start a new section
+        function startSection() {
+            currentSectionWords = allSections[currentSectionIndex];
+            // RANDOMIZATION: Shuffle words within this section
+            // This adds another layer of randomness so words appear in different orders each time
+            currentQuiz = shuffle([...currentSectionWords]);
+            currentIndex = 0;
+            score = { correct: 0, incorrect: 0 };
+            sectionResults = [];
+            incorrectWords = [];
+            answered = false;
+            isRetryRound = false;
+            sectionAttempts = 0;
+            
+            renderSectionIntro();
+        }
+
+        // Render section introduction
+        function renderSectionIntro() {
+            const totalSections = allSections.length;
+            const sectionNum = currentSectionIndex + 1;
+            const wordsInSection = currentSectionWords.length;
+            
+            // Build progress dots
+            let progressDots = '<div style="display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0;">';
+            for (let i = 0; i < totalSections; i++) {
+                const isActive = i === currentSectionIndex;
+                const isCompleted = i < currentSectionIndex;
+                let dotStyle = 'width: 12px; height: 12px; border-radius: 50%; ';
+                
+                if (isCompleted) {
+                    dotStyle += 'background: var(--success);';
+                } else if (isActive) {
+                    dotStyle += 'background: var(--accent); box-shadow: 0 0 0 3px rgba(232, 168, 73, 0.3);';
+                } else {
+                    dotStyle += 'background: var(--border);';
+                }
+                
+                progressDots += `<div style="${dotStyle}"></div>`;
+            }
+            progressDots += '</div>';
+            
+            quizContainer.innerHTML = `
+                <div class="quiz-card">
+                    <div class="quiz-prompt">Section ${sectionNum} of ${totalSections}</div>
+                    ${progressDots}
+                    <div class="quiz-word">${wordsInSection} words</div>
+                    <p style="color: var(--text-secondary); margin: 1.5rem 0;">
+                        Master these words to continue. You'll review any mistakes until you get them all right!
+                    </p>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button class="btn btn-secondary" id="quit-section-btn">Back to Menu</button>
+                        <button class="btn btn-primary" id="start-section-btn">Start Section</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('start-section-btn').addEventListener('click', () => {
+                renderQuestion();
+            });
+
+            document.getElementById('quit-section-btn').addEventListener('click', () => {
+                renderQuizStart();
+            });
+        }
+
+        function renderQuestion() {
+            const word = currentQuiz[currentIndex];
+            const prompt = quizMode === 'spanish-to-english' ? 'Translate to English' : 'Translate to Spanish';
+            const displayWord = quizMode === 'spanish-to-english' ? word.spanish : word.english;
+            const progress = ((currentIndex) / currentQuiz.length) * 100;
+
+            // Build header with section info if applicable
+            let headerHTML = '';
+            if (allSections.length > 0) {
+                const sectionNum = currentSectionIndex + 1;
+                const totalSections = allSections.length;
+                const retryLabel = isRetryRound ? ' (Retry)' : '';
+                headerHTML = `
+                    <div style="text-align: center; margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem;">
+                        Section ${sectionNum} of ${totalSections}${retryLabel}
+                    </div>
+                `;
+            }
+
+            quizContainer.innerHTML = `
+                ${headerHTML}
+                <div class="quiz-header">
+                    <div class="score-display">
+                        <div class="score-item">
+                            <div class="score-label">Correct</div>
+                            <div class="score-value correct">${score.correct}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Incorrect</div>
+                            <div class="score-value incorrect">${score.incorrect}</div>
+                        </div>
+                    </div>
+                    <div class="question-counter">${currentIndex + 1} / ${currentQuiz.length}</div>
+                </div>
+                <div class="quiz-card">
+                    <div class="quiz-prompt">${prompt}</div>
+                    <div class="quiz-word">${escapeHtml(displayWord)}</div>
+                    <input type="text" class="quiz-input" id="answer-input" placeholder="Type your answer..." autocomplete="off">
+                    <div class="feedback" id="feedback"></div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-primary" id="check-btn">Check</button>
+                        <button class="btn btn-secondary" id="skip-btn">Skip</button>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+            `;
+
+            const answerInput = document.getElementById('answer-input');
+            const checkBtn = document.getElementById('check-btn');
+            const skipBtn = document.getElementById('skip-btn');
+
+            answerInput.focus();
+
+            answerInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    if (!answered) {
+                        checkAnswer();
+                    } else {
+                        nextQuestion();
+                    }
+                }
+            });
+
+            checkBtn.addEventListener('click', () => {
+                if (!answered) {
+                    checkAnswer();
+                } else {
+                    nextQuestion();
+                }
+            });
+
+            skipBtn.addEventListener('click', () => {
+                if (!answered) {
+                    score.incorrect++;
+                    const rawAnswer = quizMode === 'spanish-to-english' ? word.english : word.spanish;
+                    const simpleAnswer = getSimpleAnswer(rawAnswer).simple || rawAnswer;
+                    document.getElementById('feedback').innerHTML = `<span class="incorrect">Skipped!</span> <span class="correct-answer">The answer was: ${escapeHtml(simpleAnswer)}</span>`;
+                    answerInput.classList.add('incorrect');
+                    answered = true;
+                    checkBtn.textContent = 'Next';
+                    skipBtn.style.display = 'none';
+                    
+                    // Track for section mode
+                    if (allSections.length > 0) {
+                        sectionResults.push({
+                            word: word,
+                            correct: false,
+                            userAnswer: '',
+                            correctAnswer: simpleAnswer
+                        });
+                        if (!incorrectWords.some(w => w.id === word.id)) {
+                            incorrectWords.push(word);
+                        }
+                    }
+                } else {
+                    nextQuestion();
+                }
+            });
+        }
+
+        // Check answer with fuzzy matching
+        function checkAnswer() {
+            const word = currentQuiz[currentIndex];
+            const answerInput = document.getElementById('answer-input');
+            const feedback = document.getElementById('feedback');
+            const checkBtn = document.getElementById('check-btn');
+            const skipBtn = document.getElementById('skip-btn');
+
+            const userAnswer = answerInput.value.trim();
+            
+            // Get the simple (cleaned) answer for checking, but keep full for display
+            const rawAnswer = quizMode === 'spanish-to-english' ? word.english : word.spanish;
+            const fullAnswer = quizMode === 'spanish-to-english' ? (word.englishFull || word.english) : (word.spanishFull || word.spanish);
+            const simpleAnswer = getSimpleAnswer(rawAnswer).simple || rawAnswer;
+
+            // Check if answer is correct using the simple answer
+            const { isCorrect, matchType } = fuzzyMatchingEnabled ?
+                isAnswerCorrect(userAnswer, simpleAnswer) :
+                { isCorrect: userAnswer.toLowerCase().trim() === simpleAnswer.toLowerCase().trim(), matchType: 'exact' };
+
+            answered = true;
+
+            if (isCorrect) {
+                score.correct++;
+                let message = '<span class="correct">¡Correcto! Well done!</span>';
+                
+                // Show feedback based on match type
+                if (matchType === 'fuzzy') {
+                    message += ' <span style="color: var(--accent); font-size: 0.9rem;">(close enough!)</span>';
+                } else if (matchType === 'variation') {
+                    message += ' <span style="color: var(--accent); font-size: 0.9rem;">(accepted variation)</span>';
+                } else if (matchType === 'keywords') {
+                    message += ' <span style="color: var(--accent); font-size: 0.9rem;">(keywords matched)</span>';
+                }
+                
+                // Show full definition if different from simple
+                if (fullAnswer !== simpleAnswer && fullAnswer.includes(';')) {
+                    message += `<br><span style="color: var(--text-muted); font-size: 0.85rem;">Full definition: ${escapeHtml(fullAnswer)}</span>`;
+                }
+                
+                feedback.innerHTML = message;
+                answerInput.classList.add('correct');
+                
+                // Track result for section mode
+                if (allSections.length > 0) {
+                    sectionResults.push({
+                        word: word,
+                        correct: true,
+                        userAnswer: userAnswer
+                    });
+                }
+            } else {
+                score.incorrect++;
+                // Show the simple answer (what they needed to type)
+                feedback.innerHTML = `<span class="incorrect">Not quite.</span> <span class="correct-answer">The answer was: ${escapeHtml(simpleAnswer)}</span>`;
+                answerInput.classList.add('incorrect');
+                
+                // Track result for section mode
+                if (allSections.length > 0) {
+                    sectionResults.push({
+                        word: word,
+                        correct: false,
+                        userAnswer: userAnswer,
+                        correctAnswer: simpleAnswer
+                    });
+                    // Add to incorrect words for retry
+                    if (!incorrectWords.some(w => w.id === word.id)) {
+                        incorrectWords.push(word);
+                    }
+                }
+            }
+
+            checkBtn.textContent = 'Next';
+            skipBtn.style.display = 'none';
+            answerInput.disabled = true;
+        }
+
+        // Fuzzy answer matching function
+        function isAnswerCorrect(userAnswer, correctAnswer) {
+            let user = userAnswer.toLowerCase().trim();
+            let correct = correctAnswer.toLowerCase().trim();
+
+            // Fix common spelling mistakes
+            const fixCommonMistakes = (str) => str
+                .replace(/seperate/g, 'separate')
+                .replace(/recieve/g, 'receive')
+                .replace(/occured/g, 'occurred')
+                .replace(/untill/g, 'until')
+                .replace(/accomodate/g, 'accommodate')
+                .replace(/definately/g, 'definitely')
+                .replace(/wierd/g, 'weird')
+                .replace(/occassion/g, 'occasion')
+                .replace(/embarass/g, 'embarrass')
+                .replace(/tommorrow/g, 'tomorrow');
+
+            user = fixCommonMistakes(user);
+
+            // Handle multiple definitions (separated by ;, /, or "or")
+            let correctAnswers = [];
+            
+            if (correct.includes(';') || correct.includes('/') || correct.includes(' or ')) {
+                // Split by these explicit separators
+                correctAnswers = correct
+                    .split(/[;\/]|\bor\b/)
+                    .map(s => s.trim())
+                    .filter(s => s.length > 0);
+            } else if (correct.includes(',')) {
+                // Handle comma-separated alternatives
+                const commaParts = correct.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                // If we have 2-4 items and they're all short phrases (≤3 words each), treat as alternatives
+                if (commaParts.length >= 2 && commaParts.length <= 4 && commaParts.every(p => p.split(' ').length <= 3)) {
+                    correctAnswers = commaParts;
+                } else {
+                    // Otherwise, treat the whole thing as one answer
+                    correctAnswers = [correct];
+                }
+            } else {
+                // Single answer
+                correctAnswers = [correct];
+            }
+
+            // Check user answer against each possible correct answer
+            for (const correctVariant of correctAnswers) {
+                const result = checkSingleAnswer(user, correctVariant);
+                if (result.isCorrect) {
+                    return result;
+                }
+            }
+
+            // If no match found with any variant
+            return { isCorrect: false, matchType: 'incorrect' };
+        }
+
+        // Check a single answer variant
+        function checkSingleAnswer(user, correct) {
+            // 1. Exact match (case insensitive)
+            if (user === correct) {
+                return { isCorrect: true, matchType: 'exact' };
+            }
+
+            // 1.5. Check if one word is a prefix/suffix of the other
+            // This handles cases like "after" vs "afterwards", "separate" vs "separated"
+            if (user.length >= 4 && correct.length >= 4) {
+                const shorter = user.length < correct.length ? user : correct;
+                const longer = user.length < correct.length ? correct : user;
+                const lengthDiff = Math.abs(user.length - correct.length);
+                
+                // Only accept prefix/suffix matches if:
+                // 1. The shorter word is at least 4 characters
+                // 2. The difference is small (common suffixes/prefixes)
+                // 3. The shorter is at the start OR end of longer (not middle)
+                if (shorter.length >= 4 && lengthDiff >= 1 && lengthDiff <= 5) {
+                    if (longer.startsWith(shorter)) {
+                        // Check if it's a reasonable suffix
+                        const suffix = longer.substring(shorter.length);
+                        const commonSuffixes = ['s', 'es', 'ed', 'ing', 'ly', 'er', 'est', 'ness', 'wards', 'ward'];
+                        if (commonSuffixes.some(suf => suffix === suf || suffix.startsWith(suf))) {
+                            return { isCorrect: true, matchType: 'variation' };
+                        }
+                    }
+                    
+                    if (longer.endsWith(shorter)) {
+                        // Check if it's a reasonable prefix
+                        const prefix = longer.substring(0, longer.length - shorter.length);
+                        const commonPrefixes = ['un', 're', 'pre', 'dis', 'mis', 'non', 'to '];
+                        if (commonPrefixes.some(pre => prefix === pre || prefix.endsWith(pre))) {
+                            return { isCorrect: true, matchType: 'variation' };
+                        }
+                    }
+                }
+            }
+
+            // 2. Check for very close matches (allowing for small typos)
+            const distance = levenshteinDistance(user, correct);
+            // Allow more typos for longer words: 1 typo for short words (up to 5 chars), 2 for medium (6-10), 3 for long (11+)
+            const maxDistance = correct.length <= 5 ? 1 : correct.length <= 10 ? 2 : 3;
+
+            if (distance <= maxDistance && distance > 0) {
+                return { isCorrect: true, matchType: 'fuzzy' };
+            }
+
+            // 3. Check for common variations (articles, plural/singular, etc.)
+            if (areSimilarAnswers(user, correct)) {
+                return { isCorrect: true, matchType: 'variation' };
+            }
+
+            // 4. Keyword matching for compound answers
+            if (keywordMatch(user, correct)) {
+                return { isCorrect: true, matchType: 'keywords' };
+            }
+
+            return { isCorrect: false, matchType: 'incorrect' };
+        }
+
+        // Levenshtein distance for fuzzy matching
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1, // substitution
+                            matrix[i][j - 1] + 1,     // insertion
+                            matrix[i - 1][j] + 1      // deletion
+                        );
+                    }
+                }
+            }
+
+            return matrix[str2.length][str1.length];
+        }
+
+        // Check for similar answers (articles, plural/singular, etc.)
+        function areSimilarAnswers(user, correct) {
+            // Remove common articles, prepositions, and auxiliary verbs
+            const normalize = (str) => str
+                .replace(/\b(the|a|an|this|that|these|those|my|your|his|her|its|our|their)\b/g, '')
+                .replace(/\b(to be|to have|to do|be|have|do|is|are|am|was|were|been|being)\b/g, '')
+                .replace(/\b(to)\b/g, '') // Remove "to" infinitive marker
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const normalizedUser = normalize(user);
+            const normalizedCorrect = normalize(correct);
+
+            // If they're the same after normalization, accept it
+            if (normalizedUser === normalizedCorrect) {
+                return true;
+            }
+
+            // Check with typo tolerance after normalization
+            if (levenshteinDistance(normalizedUser, normalizedCorrect) <= 2) {
+                return true;
+            }
+
+            // Handle verb form variations (infinitive, gerund, participle)
+            if (areVerbForms(normalizedUser, normalizedCorrect)) {
+                return true;
+            }
+
+            // Handle plural/singular variations
+            if (arePluralVariations(normalizedUser, normalizedCorrect)) {
+                return true;
+            }
+
+            // Handle common synonyms or alternative forms
+            if (areSynonyms(user, correct)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // Check for different verb forms
+        function areVerbForms(str1, str2) {
+            // Remove common verb endings to get stem
+            const getStem = (word) => {
+                return word
+                    .replace(/ed$/, '')      // past tense
+                    .replace(/ing$/, '')     // gerund
+                    .replace(/s$/, '')       // third person
+                    .replace(/d$/, '')       // some past tenses
+                    .replace(/n$/, '')       // some participles
+                    .trim();
+            };
+
+            const stem1 = getStem(str1);
+            const stem2 = getStem(str2);
+
+            // Check if stems are similar
+            return stem1 === stem2 || levenshteinDistance(stem1, stem2) <= 1;
+        }
+
+        // Check for plural/singular variations
+        function arePluralVariations(str1, str2) {
+            const singularize = (word) => word.replace(/(s|es|ies)$/, '').replace(/ie$/, 'y');
+            const pluralize = (word) => {
+                if (word.endsWith('y')) return word.slice(0, -1) + 'ies';
+                if (word.endsWith('s') || word.endsWith('sh') || word.endsWith('ch') || word.endsWith('x') || word.endsWith('z')) return word + 'es';
+                return word + 's';
+            };
+
+            // Check if one is the plural/singular form of the other
+            return singularize(str1) === singularize(str2) ||
+                   pluralize(singularize(str1)) === str2 ||
+                   str1 === pluralize(singularize(str2));
+        }
+
+        // Check for common synonyms (basic implementation)
+        function areSynonyms(str1, str2) {
+            // This is a very basic synonym check - could be expanded
+            const synonyms = {
+                'automobile': ['car', 'vehicle', 'auto'],
+                'house': ['home', 'building', 'residence'],
+                'book': ['novel', 'text', 'volume'],
+                'food': ['meal', 'dish', 'cuisine'],
+                'water': ['agua', 'beverage', 'drink'],
+                'school': ['academy', 'institution', 'college'],
+                'work': ['job', 'labor', 'employment'],
+                'time': ['hour', 'moment', 'period'],
+                'money': ['cash', 'currency', 'funds'],
+                'family': ['relatives', 'kin', 'household'],
+                'friend': ['buddy', 'pal', 'companion'],
+                'city': ['town', 'urban area', 'metropolis'],
+                'country': ['nation', 'land', 'state'],
+                'language': ['tongue', 'speech', 'dialect']
+            };
+
+            // Check if either word is in the synonym list of the other
+            for (const [key, values] of Object.entries(synonyms)) {
+                if ((str1 === key && values.includes(str2)) ||
+                    (str2 === key && values.includes(str1))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Keyword matching for compound answers
+        function keywordMatch(user, correct) {
+            // For longer answers, check if key words are present
+            if (correct.length < 10) return false; // Only for longer answers
+
+            const userWords = user.split(/\s+/);
+            const correctWords = correct.split(/\s+/);
+
+            // Must have at least 60% of the key words (excluding articles, etc.)
+            const importantCorrectWords = correctWords.filter(word =>
+                word.length > 2 && !['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'].includes(word)
+            );
+
+            if (importantCorrectWords.length === 0) return false;
+
+            let matchedWords = 0;
+            for (const correctWord of importantCorrectWords) {
+                if (userWords.some(userWord =>
+                    userWord.includes(correctWord) || correctWord.includes(userWord) ||
+                    levenshteinDistance(userWord, correctWord) <= 1
+                )) {
+                    matchedWords++;
+                }
+            }
+
+            return matchedWords / importantCorrectWords.length >= 0.6;
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            answered = false;
+
+            if (currentIndex >= currentQuiz.length) {
+                // Check if we're in section mode
+                if (allSections.length > 0) {
+                    renderSectionReview();
+                } else {
+                    renderQuizComplete();
+                }
+            } else {
+                renderQuestion();
+            }
+        }
+
+        // Render section review
+        function renderSectionReview() {
+            const correctCount = sectionResults.filter(r => r.correct).length;
+            const totalCount = sectionResults.length;
+            const percentage = Math.round((correctCount / totalCount) * 100);
+            
+            const allCorrect = incorrectWords.length === 0;
+            sectionAttempts++;
+
+            let message = '';
+            let icon = '';
+            
+            if (allCorrect) {
+                message = '¡Perfecto! Section mastered!';
+                icon = '🎉';
+            } else if (percentage >= 70) {
+                message = 'Good progress! Let\'s retry the mistakes.';
+                icon = '💪';
+            } else {
+                message = 'Keep practicing! You\'ll get there.';
+                icon = '📚';
+            }
+
+            // Build review list
+            let reviewHTML = '<div style="max-height: 300px; overflow-y: auto; margin: 1.5rem 0;">';
+            sectionResults.forEach(result => {
+                const displayWord = quizMode === 'spanish-to-english' ? result.word.spanish : result.word.english;
+                const correctAnswer = quizMode === 'spanish-to-english' ? result.word.english : result.word.spanish;
+                
+                if (result.correct) {
+                    reviewHTML += `
+                        <div style="padding: 0.75rem; background: rgba(124, 184, 124, 0.15); border-left: 3px solid var(--success); margin-bottom: 0.5rem; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-primary);"><strong>${escapeHtml(displayWord)}</strong> → ${escapeHtml(result.userAnswer)}</span>
+                                <span style="color: var(--success);">✓</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    reviewHTML += `
+                        <div style="padding: 0.75rem; background: rgba(212, 114, 106, 0.15); border-left: 3px solid var(--error); margin-bottom: 0.5rem; border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-direction: column; gap: 0.25rem;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span style="color: var(--text-primary);"><strong>${escapeHtml(displayWord)}</strong></span>
+                                    <span style="color: var(--error);">✗</span>
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">
+                                    Your answer: <span style="color: var(--error);">${escapeHtml(result.userAnswer || '(skipped)')}</span>
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    Correct: <span style="color: var(--success);">${escapeHtml(correctAnswer)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            reviewHTML += '</div>';
+
+            quizContainer.innerHTML = `
+                <div class="quiz-card">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">${icon}</div>
+                    <h2 style="font-family: 'Instrument Serif', serif; font-size: 2rem; font-weight: 400; margin-bottom: 1rem;">${message}</h2>
+                    <div style="font-size: 1.5rem; color: var(--accent); margin-bottom: 0.5rem;">${correctCount} / ${totalCount}</div>
+                    <div style="color: var(--text-secondary); margin-bottom: 1.5rem;">Attempt ${sectionAttempts}</div>
+                    ${reviewHTML}
+                    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                        ${!allCorrect ? `<button class="btn btn-primary" id="retry-mistakes-btn">Retry Mistakes (${incorrectWords.length})</button>` : ''}
+                        ${allCorrect && currentSectionIndex < allSections.length - 1 ? `<button class="btn btn-primary" id="next-section-btn">Next Section</button>` : ''}
+                        ${allCorrect && currentSectionIndex >= allSections.length - 1 ? `<button class="btn btn-primary" id="finish-all-btn">Complete Quiz!</button>` : ''}
+                        <button class="btn btn-secondary" id="quit-review-btn">Back to Menu</button>
+                    </div>
+                </div>
+            `;
+
+            if (!allCorrect) {
+                document.getElementById('retry-mistakes-btn').addEventListener('click', () => {
+                    retryIncorrectWords();
+                });
+            }
+
+            if (allCorrect && currentSectionIndex < allSections.length - 1) {
+                document.getElementById('next-section-btn').addEventListener('click', () => {
+                    currentSectionIndex++;
+                    startSection();
+                });
+            }
+
+            if (allCorrect && currentSectionIndex >= allSections.length - 1) {
+                document.getElementById('finish-all-btn').addEventListener('click', () => {
+                    renderFinalCompletion();
+                });
+            }
+
+            document.getElementById('quit-review-btn').addEventListener('click', () => {
+                renderQuizStart();
+            });
+        }
+
+        // Retry only incorrect words
+        function retryIncorrectWords() {
+            // RANDOMIZATION: Shuffle incorrect words so they appear in a different order
+            // This prevents memorizing the sequence instead of actually learning
+            currentQuiz = shuffle([...incorrectWords]);
+            currentIndex = 0;
+            score = { correct: 0, incorrect: 0 };
+            sectionResults = [];
+            incorrectWords = [];
+            answered = false;
+            isRetryRound = true;
+            
+            renderQuestion();
+        }
+
+        // Final completion screen
+        function renderFinalCompletion() {
+            quizContainer.innerHTML = `
+                <div class="quiz-card">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🏆</div>
+                    <h2 style="font-family: 'Instrument Serif', serif; font-size: 2.5rem; font-weight: 400; margin-bottom: 1rem;">All Sections Complete!</h2>
+                    <p style="color: var(--accent); font-size: 1.5rem; margin-bottom: 1rem;">You've mastered all ${vocabulary.length} words!</p>
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">¡Excelente trabajo! Keep practicing to retain your vocabulary.</p>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button class="btn btn-primary" id="restart-all-btn">Start Again</button>
+                        <button class="btn btn-secondary" id="back-menu-btn">Back to Menu</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('restart-all-btn').addEventListener('click', () => {
+                startQuiz();
+            });
+
+            document.getElementById('back-menu-btn').addEventListener('click', () => {
+                renderQuizStart();
+            });
+        }
+
+        function renderQuizComplete() {
+            const total = score.correct + score.incorrect;
+            const percentage = Math.round((score.correct / total) * 100);
+            let message = '';
+
+            if (percentage === 100) {
+                message = '¡Perfecto! You nailed it! 🎉';
+            } else if (percentage >= 80) {
+                message = '¡Muy bien! Great work! 🌟';
+            } else if (percentage >= 60) {
+                message = '¡Bien hecho! Keep practicing! 💪';
+            } else {
+                message = 'Keep studying, you\'ll get there! 📚';
+            }
+
+            quizContainer.innerHTML = `
+                <div class="quiz-card">
+                    <div class="quiz-complete">
+                        <h2>Quiz Complete!</h2>
+                        <div class="final-score">${percentage}%</div>
+                        <p class="score-message">${message}</p>
+                        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                            ${score.correct} correct out of ${total} questions
+                        </p>
+                        <div class="quiz-actions">
+                            <button class="btn btn-primary" id="restart-btn">Try Again</button>
+                            <button class="btn btn-secondary" id="new-quiz-btn">New Quiz</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('restart-btn').addEventListener('click', startQuiz);
+            document.getElementById('new-quiz-btn').addEventListener('click', renderQuizStart);
+        }
+
+        // Initial render
+        renderWordList();
+
+        // Log loaded vocabulary count
+        console.log(`Loaded ${vocabulary.length} words from localStorage`);
+
+        // ==================== AUTHENTICATION ====================
+
+        const googleSigninBtn = document.getElementById('google-signin-btn');
+        const authControls = document.getElementById('auth-controls');
+        const syncStatus = document.getElementById('sync-status');
+        const syncDot = document.getElementById('sync-dot');
+        const syncText = document.getElementById('sync-text');
+
+        // Update auth UI based on user state
+        function updateAuthUI(user) {
+            if (user) {
+                // User is signed in
+                authControls.innerHTML = `
+                    <div class="user-info">
+                        ${user.photoURL 
+                            ? `<img src="${user.photoURL}" alt="Profile" class="user-avatar" referrerpolicy="no-referrer">` 
+                            : `<div class="user-avatar-placeholder">👤</div>`
+                        }
+                        <div class="user-details">
+                            <span class="user-name">${escapeHtml(user.displayName || 'User')}</span>
+                            <span class="user-email">${escapeHtml(user.email)}</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Show sync status
+                syncStatus.style.display = 'flex';
+                
+            } else {
+                // User is signed out
+                authControls.innerHTML = `
+                    <button class="btn-google" id="google-signin-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Sign in with Google
+                    </button>
+                `;
+                
+                // Add sign in listener
+                document.getElementById('google-signin-btn').addEventListener('click', signInWithGoogle);
+                
+                // Hide sync status
+                syncStatus.style.display = 'none';
+            }
+        }
+
+        // Google Sign In
+        async function signInWithGoogle() {
+            if (!auth) {
+                showToast('⚠️ Firebase not configured');
+                console.error('Firebase auth not available. Please configure Firebase.');
+                return;
+            }
+
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('email');
+                provider.addScope('profile');
+                
+                const result = await auth.signInWithPopup(provider);
+                console.log('Signed in as:', result.user.displayName);
+                showToast(`Welcome, ${result.user.displayName}!`);
+                
+            } catch (error) {
+                console.error('Sign in error:', error);
+                showToast('❌ Sign in failed. If you opened the file directly, use http://localhost:8081/spanish-quiz.html');
+            }
+        }
+
+        // Sign Out - global function for onclick
+        window.handleSignOut = async function() {
+            console.log('Sign out button clicked');
+            
+            if (!auth) {
+                console.error('Auth not available');
+                showToast('⚠️ Auth not available');
+                return;
+            }
+
+            console.log('Attempting to sign out...');
+            try {
+                // Disable button to prevent double clicks
+                const btn = document.getElementById('signout-btn');
+                if (btn) btn.disabled = true;
+
+                // Unsubscribe from Firestore listener
+                if (unsubscribeVocab) {
+                    unsubscribeVocab();
+                    unsubscribeVocab = null;
+                }
+                
+                await auth.signOut();
+                currentUser = null;
+                
+                // Reset to local storage
+                loadVocabulary();
+                renderWordList();
+                
+                showToast('Signed out successfully');
+                
+            } catch (error) {
+                console.error('Sign out error:', error);
+                showToast('❌ Sign out failed');
+            } finally {
+                const btn = document.getElementById('signout-btn');
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        // Auth state listener
+        if (auth) {
+            auth.onAuthStateChanged(async (user) => {
+                currentUser = user;
+                updateAuthUI(user);
+                
+                if (user) {
+                    // Setup user document
+                    await setupUserDocument(user.uid);
+                    
+                    // Start Firestore sync
+                    startFirestoreSync(user.uid);
+                }
+            });
+        } else {
+            // Firebase not configured, use initial sign-in button listener
+            document.getElementById('google-signin-btn').addEventListener('click', () => {
+                showToast('⚠️ Please configure Firebase first');
+            });
+        }
+
+        // ==================== FIRESTORE SYNC ====================
+
+        function showSyncing() {
+            syncDot.classList.add('syncing');
+            syncText.textContent = 'Syncing...';
+        }
+
+        function showSynced() {
+            syncDot.classList.remove('syncing');
+            syncText.textContent = 'Synced';
+        }
+
+        async function startFirestoreSync(userId) {
+            if (!db) return;
+
+            showSyncing();
+
+            try {
+                // Listen to user's vocabulary collection
+                const vocabRef = db.collection('users').doc(userId).collection('vocabulary');
+                
+                unsubscribeVocab = vocabRef.orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                    const firestoreVocab = [];
+                    
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        firestoreVocab.push({
+                            id: doc.id,
+                            spanish: data.spanish,
+                            english: data.english,
+                            createdAt: data.createdAt?.toDate?.() || new Date()
+                        });
+                    });
+                    
+                    // Merge with local vocabulary
+                    if (firestoreVocab.length > 0 || vocabulary.length === 0) {
+                        vocabulary = firestoreVocab;
+                        renderWordList();
+                    } else if (vocabulary.length > 0 && firestoreVocab.length === 0) {
+                        // Upload local vocabulary to Firestore
+                        uploadLocalVocabulary(userId);
+                    }
+                    
+                    showSynced();
+                    
+                }, (error) => {
+                    console.error('Firestore sync error:', error);
+                    showToast('⚠️ Sync error. Using local data.');
+                    loadVocabulary();
+                    renderWordList();
+                });
+                
+            } catch (error) {
+                console.error('Error starting Firestore sync:', error);
+            }
+        }
+
+        async function uploadLocalVocabulary(userId) {
+            if (!db || vocabulary.length === 0) return;
+
+            showSyncing();
+
+            try {
+                const batch = db.batch();
+                const vocabRef = db.collection('users').doc(userId).collection('vocabulary');
+                
+                vocabulary.forEach((word) => {
+                    const docRef = vocabRef.doc();
+                    batch.set(docRef, {
+                        spanish: word.spanish,
+                        english: word.english,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                
+                await batch.commit();
+                console.log('Local vocabulary uploaded to Firestore');
+                showToast('📤 Vocabulary synced to cloud');
+                
+            } catch (error) {
+                console.error('Error uploading vocabulary:', error);
+            }
+        }
+
+        // Override saveVocabulary to sync with Firestore
+        const originalSaveVocabulary = saveVocabulary;
+        saveVocabulary = async function() {
+            // Always save to localStorage as backup
+            originalSaveVocabulary();
+            
+            // If logged in, sync to Firestore
+            if (currentUser && db) {
+                // Note: Firestore updates are handled by the individual add/delete functions
+            }
+        };
+
+        // Add word to Firestore
+        async function addWordToFirestore(spanish, english) {
+            if (!currentUser || !db) return null;
+
+            try {
+                const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
+                const docRef = await vocabRef.add({
+                    spanish: spanish,
+                    english: english,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                return docRef.id;
+            } catch (error) {
+                console.error('Error adding word to Firestore:', error);
+                return null;
+            }
+        }
+
+        // Delete word from Firestore
+        async function deleteWordFromFirestore(wordId) {
+            if (!currentUser || !db) return;
+
+            try {
+                await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(wordId).delete();
+            } catch (error) {
+                console.error('Error deleting word from Firestore:', error);
+            }
+        }
+
+        // Override addWord function to support Firestore
+        const originalAddWord = addWord;
+        addWord = async function() {
+            const spanish = spanishInput.value.trim();
+            const english = englishInput.value.trim();
+
+            if (spanish && english) {
+                if (currentUser && db) {
+                    // Add to Firestore (will sync via listener)
+                    showSyncing();
+                    const docId = await addWordToFirestore(spanish, english);
+                    if (!docId) {
+                        // Fallback to local
+                        vocabulary.push({ spanish, english, id: Date.now() });
+                        saveVocabulary();
+                        renderWordList();
+                    }
+                } else {
+                    // Local only
+                    vocabulary.push({ spanish, english, id: Date.now() });
+                    saveVocabulary();
+                    renderWordList();
+                }
+                
+                spanishInput.value = '';
+                englishInput.value = '';
+                spanishInput.focus();
+            }
+        };
+
+        // Override deleteWord function
+        const originalDeleteWord = deleteWord;
+        deleteWord = async function(id) {
+            if (currentUser && db) {
+                showSyncing();
+                await deleteWordFromFirestore(id);
+            }
+            vocabulary = vocabulary.filter(w => w.id !== id);
+            saveVocabulary();
+            renderWordList();
+        };
+
+        // ==================== USER SETUP ====================
+
+        // Create user document if needed
+        async function setupUserDocument(userId) {
+            if (!db) return;
+
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (!userDoc.exists) {
+                    // Create user document if doesn't exist
+                    await db.collection('users').doc(userId).set({
+                        email: currentUser.email,
+                        displayName: currentUser.displayName,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (error) {
+                console.error('Error setting up user document:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
