@@ -3022,6 +3022,10 @@ perro: dog
                 return;
             }
 
+            // Check for saved progress
+            const savedProgress = loadQuizProgress();
+            const hasSavedProgress = savedProgress && savedProgress.currentQuiz && savedProgress.currentQuiz.length > 0;
+
             quizContainer.innerHTML = `
                 <div class="mode-selection">
                     <button class="mode-btn ${quizMode === 'spanish-to-english' ? 'active' : ''}" data-mode="spanish-to-english">
@@ -3057,7 +3061,19 @@ perro: dog
                 <div class="quiz-card">
                     <div class="quiz-prompt">Ready to practice?</div>
                     <div class="quiz-word">${vocabulary.length} words</div>
-                    <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
+                    ${hasSavedProgress ? `
+                        <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                            <button class="btn btn-primary" id="continue-quiz-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                ↻ Continue Quiz
+                            </button>
+                            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                                You have a quiz in progress (${savedProgress.currentIndex + 1}/${savedProgress.currentQuiz.length} questions)
+                            </div>
+                            <button class="btn btn-secondary" id="start-quiz-btn">Start New Quiz</button>
+                        </div>
+                    ` : `
+                        <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
+                    `}
                 </div>
             `;
 
@@ -3080,9 +3096,96 @@ perro: dog
             });
 
             document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
+            
+            // Add listener for continue button if it exists
+            const continueBtn = document.getElementById('continue-quiz-btn');
+            if (continueBtn && hasSavedProgress) {
+                continueBtn.addEventListener('click', () => {
+                    resumeQuiz(savedProgress);
+                });
+            }
+        }
+
+        // Save quiz progress to localStorage
+        function saveQuizProgress() {
+            try {
+                const progressData = {
+                    currentQuiz: currentQuiz,
+                    currentIndex: currentIndex,
+                    score: score,
+                    quizMode: quizMode,
+                    answered: answered,
+                    allSections: allSections,
+                    currentSection: currentSection,
+                    sectionResults: sectionResults,
+                    incorrectWords: incorrectWords,
+                    sectionSize: sectionSize,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('quizProgress', JSON.stringify(progressData));
+            } catch (error) {
+                console.log('Error saving quiz progress:', error);
+            }
+        }
+
+        // Load quiz progress from localStorage
+        function loadQuizProgress() {
+            try {
+                const saved = localStorage.getItem('quizProgress');
+                if (!saved) return null;
+
+                const progressData = JSON.parse(saved);
+                
+                // Check if progress is recent (less than 7 days old)
+                const daysSince = (Date.now() - progressData.timestamp) / (1000 * 60 * 60 * 24);
+                if (daysSince > 7) {
+                    localStorage.removeItem('quizProgress');
+                    return null;
+                }
+
+                return progressData;
+            } catch (error) {
+                console.log('Error loading quiz progress:', error);
+                return null;
+            }
+        }
+
+        // Clear saved quiz progress
+        function clearQuizProgress() {
+            try {
+                localStorage.removeItem('quizProgress');
+            } catch (error) {
+                console.log('Error clearing quiz progress:', error);
+            }
+        }
+
+        // Resume quiz from saved progress
+        function resumeQuiz(progressData) {
+            currentQuiz = progressData.currentQuiz || [];
+            currentIndex = progressData.currentIndex || 0;
+            score = progressData.score || { correct: 0, incorrect: 0 };
+            quizMode = progressData.quizMode || 'spanish-to-english';
+            answered = progressData.answered || false;
+            allSections = progressData.allSections || [];
+            currentSection = progressData.currentSection || 0;
+            sectionResults = progressData.sectionResults || [];
+            incorrectWords = progressData.incorrectWords || [];
+            sectionSize = progressData.sectionSize || 0;
+
+            // Render the current question
+            if (currentIndex < currentQuiz.length) {
+                renderQuestion();
+            } else if (allSections.length > 0 && currentSection < allSections.length) {
+                renderSectionReview();
+            } else {
+                renderQuizComplete();
+            }
         }
 
         function startQuiz() {
+            // Clear any existing progress when starting fresh
+            clearQuizProgress();
+            
             // RANDOMIZATION STEP 1: Shuffle all vocabulary words
             const shuffled = shuffle(vocabulary);
             
@@ -3365,6 +3468,9 @@ perro: dog
             checkBtn.textContent = 'Next';
             skipBtn.style.display = 'none';
             answerInput.disabled = true;
+            
+            // Save progress after answering
+            saveQuizProgress();
         }
 
         // Fuzzy answer matching function
@@ -3479,7 +3585,49 @@ perro: dog
             'trabajo': ['empleo', 'ocupación'],
             'dinero': ['plata', 'efectivo'],
             'comprar': ['adquirir'],
-            'vender': ['comerciar']
+            'vender': ['comerciar'],
+            // Food and restaurant terms
+            'appetizers': ['hors d\'oeuvres', 'starters', 'entrees'],
+            'entremeses': ['aperitivos', 'entradas'],
+            'dessert': ['sweet', 'pudding'],
+            'postre': ['dulce'],
+            'meal': ['food', 'dish'],
+            'comida': ['alimento', 'plato'],
+            'breakfast': ['morning meal'],
+            'desayuno': ['comida de la mañana'],
+            'lunch': ['midday meal', 'dinner'],
+            'almuerzo': ['comida del mediodía'],
+            'dinner': ['supper', 'evening meal', 'lunch'],
+            'cena': ['comida de la noche'],
+            'drink': ['beverage'],
+            'bebida': ['trago'],
+            // Common verbs with broader meanings
+            'go': ['leave', 'depart', 'travel'],
+            'ir': ['salir', 'partir'],
+            'come': ['arrive', 'approach'],
+            'venir': ['llegar'],
+            'get': ['obtain', 'receive', 'acquire'],
+            'obtener': ['conseguir', 'recibir'],
+            'put': ['place', 'set'],
+            'poner': ['colocar'],
+            'find': ['discover', 'locate'],
+            'encontrar': ['hallar', 'descubrir'],
+            'tell': ['say', 'inform'],
+            'decir': ['contar', 'informar'],
+            'ask': ['question', 'inquire'],
+            'preguntar': ['cuestionar'],
+            'try': ['attempt', 'endeavor'],
+            'intentar': ['tratar'],
+            'feel': ['sense', 'perceive'],
+            'sentir': ['percibir'],
+            'leave': ['depart', 'exit', 'go'],
+            'salir': ['partir', 'irse'],
+            'turn': ['rotate', 'spin'],
+            'girar': ['rotar'],
+            'move': ['shift', 'relocate'],
+            'mover': ['desplazar'],
+            'live': ['reside', 'dwell'],
+            'vivir': ['residir', 'habitar']
         };
 
         // Check if two words are synonyms
@@ -3513,9 +3661,36 @@ perro: dog
         // Check semantic similarity using Google Translate
         async function checkSemanticSimilarity(userAnswer, correctAnswer, quizMode) {
             try {
+                const cleanUser = userAnswer.toLowerCase().trim();
+                const cleanCorrect = correctAnswer.toLowerCase().trim();
+
                 // Quick synonym check first (faster than translation)
-                if (areSynonyms(userAnswer.toLowerCase().trim(), correctAnswer.toLowerCase().trim())) {
+                if (areSynonyms(cleanUser, cleanCorrect)) {
                     return { isCorrect: true, matchType: 'semantic' };
+                }
+
+                // Check if individual words in multi-word answers are synonyms
+                const userWords = cleanUser.split(/\s+/);
+                const correctWords = cleanCorrect.split(/\s+/);
+                
+                // If single word answers, check if they're in each other's synonym lists
+                if (userWords.length === 1 && correctWords.length === 1) {
+                    // Already checked above
+                } else if (userWords.length > 0 && correctWords.length > 0) {
+                    // For multi-word, check if the main content words are synonyms
+                    const userContent = userWords.filter(w => w.length > 2 && !['the', 'a', 'an', 'of', 'to', 'in', 'for', 'el', 'la', 'los', 'las', 'un', 'una', 'de', 'del'].includes(w));
+                    const correctContent = correctWords.filter(w => w.length > 2 && !['the', 'a', 'an', 'of', 'to', 'in', 'for', 'el', 'la', 'los', 'las', 'un', 'una', 'de', 'del'].includes(w));
+                    
+                    if (userContent.length > 0 && correctContent.length > 0) {
+                        // Check if any user content word is a synonym of any correct content word
+                        for (const uw of userContent) {
+                            for (const cw of correctContent) {
+                                if (areSynonyms(uw, cw)) {
+                                    return { isCorrect: true, matchType: 'semantic' };
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Determine source and target languages
@@ -4003,11 +4178,15 @@ perro: dog
                 if (allSections.length > 0) {
                     renderSectionReview();
                 } else {
+                    clearQuizProgress(); // Quiz completed, clear progress
                     renderQuizComplete();
                 }
             } else {
                 renderQuestion();
             }
+            
+            // Save progress after moving to next question
+            saveQuizProgress();
         }
 
         // Render section review
@@ -4122,10 +4301,14 @@ perro: dog
             isRetryRound = true;
             
             renderQuestion();
+            saveQuizProgress();
         }
 
         // Final completion screen
         function renderFinalCompletion() {
+            // Clear saved progress when quiz is fully completed
+            clearQuizProgress();
+            
             quizContainer.innerHTML = `
                 <div class="quiz-card">
                     <div style="font-size: 4rem; margin-bottom: 1rem;">🏆</div>
