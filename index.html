@@ -2014,7 +2014,7 @@ perro: dog
                                        data-edit-id="${word.id}" data-field="english" placeholder="English">
                             </div>
                             <div class="edit-actions">
-                                <button class="btn btn-primary btn-small" onclick="saveEdit(${word.id})">Save</button>
+                                <button class="btn btn-primary btn-small" onclick="saveEdit('${word.id}')">Save</button>
                                 <button class="btn btn-secondary btn-small" onclick="cancelEdit()">Cancel</button>
                             </div>
                         </div>
@@ -2029,8 +2029,8 @@ perro: dog
                                 <span class="english-word">${escapeHtml(word.english)}</span>
                             </div>
                             <div class="word-actions">
-                                <button class="edit-btn" onclick="editWord(${word.id})" title="Edit">✏️</button>
-                                <button class="delete-btn" onclick="deleteWord(${word.id})" title="Delete">×</button>
+                                <button class="edit-btn" onclick="editWord('${word.id}')" title="Edit">✏️</button>
+                                <button class="delete-btn" onclick="deleteWord('${word.id}')" title="Delete">×</button>
                             </div>
                         </div>
                     `;
@@ -4672,6 +4672,35 @@ perro: dog
             vocabulary = vocabulary.filter(w => w.id !== id);
             saveVocabulary();
             renderWordList();
+        };
+
+        // Override saveEdit function to sync with Firestore
+        const originalSaveEdit = saveEdit;
+        saveEdit = async function(id) {
+            const word = vocabulary.find(w => w.id === id);
+            const spanishInput = document.querySelector(`input[data-edit-id="${id}"][data-field="spanish"]`);
+            const englishInput = document.querySelector(`input[data-edit-id="${id}"][data-field="english"]`);
+            
+            const newSpanish = spanishInput.value.trim();
+            const newEnglish = englishInput.value.trim();
+            
+            if (newSpanish && newEnglish) {
+                word.spanish = newSpanish;
+                word.english = newEnglish;
+                
+                // Sync to Firestore
+                if (currentUser && db) {
+                    showSyncing();
+                    await updateWordInFirestore(word);
+                }
+                
+                saveVocabulary();
+                editingWordId = null;
+                renderWordList();
+                showToast('Word updated!');
+            } else {
+                alert('Both Spanish and English fields must be filled.');
+            }
         };
 
         // ==================== USER SETUP ====================
