@@ -3278,8 +3278,8 @@ perro: dog
             });
         }
 
-        // Check answer with fuzzy matching
-        function checkAnswer() {
+        // Check answer with fuzzy matching and semantic similarity
+        async function checkAnswer() {
             const word = currentQuiz[currentIndex];
             const answerInput = document.getElementById('answer-input');
             const feedback = document.getElementById('feedback');
@@ -3293,10 +3293,20 @@ perro: dog
             const fullAnswer = quizMode === 'spanish-to-english' ? (word.englishFull || word.english) : (word.spanishFull || word.spanish);
             const simpleAnswer = getSimpleAnswer(rawAnswer).simple || rawAnswer;
 
-            // Check if answer is correct using the simple answer
-            const { isCorrect, matchType } = fuzzyMatchingEnabled ?
+            // First try traditional fuzzy matching
+            let result = fuzzyMatchingEnabled ?
                 isAnswerCorrect(userAnswer, simpleAnswer) :
                 { isCorrect: userAnswer.toLowerCase().trim() === simpleAnswer.toLowerCase().trim(), matchType: 'exact' };
+
+            // If not correct, try semantic similarity check with Google Translate
+            if (!result.isCorrect && userAnswer.length > 0) {
+                const semanticMatch = await checkSemanticSimilarity(userAnswer, simpleAnswer, quizMode);
+                if (semanticMatch.isCorrect) {
+                    result = semanticMatch;
+                }
+            }
+
+            const { isCorrect, matchType } = result;
 
             answered = true;
 
@@ -3311,6 +3321,8 @@ perro: dog
                     message += ' <span style="color: var(--accent); font-size: 0.9rem;">(accepted variation)</span>';
                 } else if (matchType === 'keywords') {
                     message += ' <span style="color: var(--accent); font-size: 0.9rem;">(keywords matched)</span>';
+                } else if (matchType === 'semantic') {
+                    message += ' <span style="color: var(--accent); font-size: 0.9rem;">✓ (similar meaning accepted)</span>';
                 }
                 
                 // Show full definition if different from simple
@@ -3356,6 +3368,323 @@ perro: dog
         }
 
         // Fuzzy answer matching function
+        // Common synonyms database for more lenient checking
+        const commonSynonyms = {
+            // English synonyms
+            'happy': ['glad', 'joyful', 'pleased', 'content', 'cheerful', 'delighted'],
+            'sad': ['unhappy', 'sorrowful', 'depressed', 'gloomy', 'miserable'],
+            'big': ['large', 'huge', 'enormous', 'giant', 'massive', 'great'],
+            'small': ['little', 'tiny', 'mini', 'petite', 'miniature'],
+            'good': ['great', 'excellent', 'fine', 'nice', 'well'],
+            'bad': ['poor', 'terrible', 'awful', 'horrible'],
+            'beautiful': ['pretty', 'lovely', 'attractive', 'gorgeous', 'stunning'],
+            'ugly': ['unattractive', 'hideous', 'unsightly'],
+            'fast': ['quick', 'rapid', 'swift', 'speedy'],
+            'slow': ['sluggish', 'leisurely', 'gradual'],
+            'smart': ['intelligent', 'clever', 'bright', 'brilliant'],
+            'stupid': ['dumb', 'foolish', 'idiotic'],
+            'easy': ['simple', 'straightforward', 'effortless'],
+            'hard': ['difficult', 'tough', 'challenging'],
+            'old': ['elderly', 'aged', 'ancient'],
+            'young': ['youthful', 'juvenile'],
+            'rich': ['wealthy', 'affluent', 'prosperous'],
+            'poor': ['needy', 'impoverished', 'broke'],
+            'strong': ['powerful', 'mighty', 'robust'],
+            'weak': ['feeble', 'frail', 'fragile'],
+            'cold': ['chilly', 'freezing', 'frigid', 'cool'],
+            'hot': ['warm', 'heated', 'boiling', 'scorching'],
+            'tired': ['exhausted', 'weary', 'fatigued', 'sleepy'],
+            'angry': ['mad', 'furious', 'enraged', 'irate'],
+            'scared': ['afraid', 'frightened', 'terrified', 'fearful'],
+            'love': ['adore', 'cherish', 'care for'],
+            'hate': ['detest', 'despise', 'loathe'],
+            'help': ['assist', 'aid', 'support'],
+            'stop': ['halt', 'cease', 'end', 'quit'],
+            'start': ['begin', 'commence', 'initiate'],
+            'eat': ['consume', 'devour', 'dine'],
+            'drink': ['sip', 'gulp', 'consume'],
+            'walk': ['stroll', 'amble', 'stride'],
+            'run': ['jog', 'sprint', 'dash'],
+            'talk': ['speak', 'converse', 'chat'],
+            'look': ['see', 'watch', 'observe', 'view'],
+            'hear': ['listen', 'perceive'],
+            'think': ['believe', 'consider', 'ponder'],
+            'want': ['desire', 'wish', 'crave'],
+            'need': ['require', 'must have'],
+            'give': ['provide', 'offer', 'present'],
+            'take': ['grab', 'seize', 'get'],
+            'make': ['create', 'produce', 'build'],
+            'know': ['understand', 'comprehend', 'realize'],
+            'work': ['job', 'labor', 'employment'],
+            'play': ['game', 'fun', 'recreation'],
+            'house': ['home', 'residence', 'dwelling'],
+            'car': ['automobile', 'vehicle'],
+            'friend': ['buddy', 'pal', 'companion'],
+            'enemy': ['foe', 'rival', 'opponent'],
+            'job': ['work', 'occupation', 'employment', 'career'],
+            'money': ['cash', 'currency', 'funds'],
+            'buy': ['purchase', 'acquire'],
+            'sell': ['vend', 'trade'],
+            // Spanish synonyms
+            'feliz': ['contento', 'alegre'],
+            'triste': ['deprimido', 'melancólico'],
+            'grande': ['enorme', 'inmenso'],
+            'pequeño': ['chico', 'diminuto'],
+            'bueno': ['bien'],
+            'malo': ['mal'],
+            'bonito': ['hermoso', 'lindo', 'bello'],
+            'feo': ['horrible'],
+            'rápido': ['veloz', 'pronto'],
+            'lento': ['despacio'],
+            'inteligente': ['listo', 'sabio'],
+            'tonto': ['estúpido', 'idiota'],
+            'fácil': ['sencillo', 'simple'],
+            'difícil': ['complicado', 'duro'],
+            'viejo': ['anciano', 'antiguo'],
+            'joven': ['juvenil'],
+            'rico': ['adinerado', 'acomodado'],
+            'pobre': ['necesitado'],
+            'fuerte': ['poderoso', 'potente'],
+            'débil': ['flojo'],
+            'frío': ['helado', 'gélido'],
+            'caliente': ['cálido'],
+            'cansado': ['agotado', 'exhausto'],
+            'enojado': ['furioso', 'enfadado'],
+            'asustado': ['temeroso', 'aterrado'],
+            'amar': ['querer', 'adorar'],
+            'odiar': ['detestar'],
+            'ayudar': ['asistir', 'apoyar'],
+            'parar': ['detener', 'cesar'],
+            'comenzar': ['empezar', 'iniciar'],
+            'comer': ['consumir'],
+            'beber': ['tomar'],
+            'caminar': ['andar'],
+            'correr': ['trotar'],
+            'hablar': ['conversar', 'charlar', 'platicar'],
+            'mirar': ['ver', 'observar'],
+            'escuchar': ['oír'],
+            'pensar': ['creer', 'considerar'],
+            'querer': ['desear'],
+            'necesitar': ['requerir'],
+            'dar': ['ofrecer', 'proveer'],
+            'tomar': ['agarrar', 'coger'],
+            'hacer': ['crear', 'producir'],
+            'saber': ['conocer', 'entender'],
+            'trabajar': ['laborar'],
+            'jugar': ['divertirse'],
+            'casa': ['hogar', 'vivienda'],
+            'coche': ['auto', 'automóvil', 'carro'],
+            'amigo': ['compañero'],
+            'enemigo': ['rival'],
+            'trabajo': ['empleo', 'ocupación'],
+            'dinero': ['plata', 'efectivo'],
+            'comprar': ['adquirir'],
+            'vender': ['comerciar']
+        };
+
+        // Check if two words are synonyms
+        function areSynonyms(word1, word2) {
+            const w1 = word1.toLowerCase().trim();
+            const w2 = word2.toLowerCase().trim();
+
+            if (w1 === w2) return true;
+
+            // Check if w1 is a key and w2 is in its synonyms
+            if (commonSynonyms[w1] && commonSynonyms[w1].includes(w2)) {
+                return true;
+            }
+
+            // Check if w2 is a key and w1 is in its synonyms
+            if (commonSynonyms[w2] && commonSynonyms[w2].includes(w1)) {
+                return true;
+            }
+
+            // Check if both are in the same synonym list
+            for (const [key, synonyms] of Object.entries(commonSynonyms)) {
+                if ((key === w1 || synonyms.includes(w1)) && 
+                    (key === w2 || synonyms.includes(w2))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Check semantic similarity using Google Translate
+        async function checkSemanticSimilarity(userAnswer, correctAnswer, quizMode) {
+            try {
+                // Quick synonym check first (faster than translation)
+                if (areSynonyms(userAnswer.toLowerCase().trim(), correctAnswer.toLowerCase().trim())) {
+                    return { isCorrect: true, matchType: 'semantic' };
+                }
+
+                // Determine source and target languages
+                const isSpanishToEnglish = quizMode === 'spanish-to-english';
+                const sourceLang = isSpanishToEnglish ? 'en' : 'es';
+                const targetLang = isSpanishToEnglish ? 'es' : 'en';
+
+                // Translate user's answer to the opposite language
+                const translatedUser = await translateText(userAnswer, sourceLang, targetLang);
+                
+                if (!translatedUser) {
+                    return { isCorrect: false, matchType: 'semantic' };
+                }
+
+                // Compare translated user answer with the original word
+                const originalWord = isSpanishToEnglish ? 
+                    currentQuiz[currentIndex].spanish : 
+                    currentQuiz[currentIndex].english;
+
+                // Clean both for comparison
+                const cleanTranslated = cleanForComparison(translatedUser);
+                const cleanOriginal = cleanForComparison(originalWord);
+
+                // Calculate similarity score
+                const similarity = calculateSimilarity(cleanTranslated, cleanOriginal);
+
+                // Also check reverse translation for double verification
+                const reverseTranslated = await translateText(correctAnswer, targetLang, sourceLang);
+                const cleanReverse = reverseTranslated ? cleanForComparison(reverseTranslated) : '';
+                const cleanUserAnswer = cleanForComparison(userAnswer);
+                const reverseSimilarity = reverseTranslated ? calculateSimilarity(cleanReverse, cleanUserAnswer) : 0;
+
+                // Accept if either direction shows high similarity (>= 60% - very lenient!)
+                if (similarity >= 0.60 || reverseSimilarity >= 0.60) {
+                    return { isCorrect: true, matchType: 'semantic' };
+                }
+
+                // Also check if the translations are synonyms or moderately close
+                if (similarity >= 0.40 || reverseSimilarity >= 0.40) {
+                    // Additional check: word overlap
+                    const words1 = cleanTranslated.split(/\s+/);
+                    const words2 = cleanOriginal.split(/\s+/);
+                    const overlap = words1.filter(w => words2.includes(w)).length;
+                    const overlapRatio = overlap / Math.max(words1.length, words2.length);
+
+                    // Accept if at least 40% of words overlap
+                    if (overlapRatio >= 0.4) {
+                        return { isCorrect: true, matchType: 'semantic' };
+                    }
+                }
+
+                // Additional lenient check: if any significant word matches
+                const words1 = cleanTranslated.split(/\s+/).filter(w => w.length > 2);
+                const words2 = cleanOriginal.split(/\s+/).filter(w => w.length > 2);
+                
+                if (words1.length > 0 && words2.length > 0) {
+                    // Check if main words are similar
+                    for (const w1 of words1) {
+                        for (const w2 of words2) {
+                            const wordSim = 1 - (levenshteinDistance(w1, w2) / Math.max(w1.length, w2.length));
+                            if (wordSim >= 0.75) {
+                                return { isCorrect: true, matchType: 'semantic' };
+                            }
+                        }
+                    }
+                }
+
+                return { isCorrect: false, matchType: 'semantic' };
+            } catch (error) {
+                console.log('Semantic check error:', error);
+                return { isCorrect: false, matchType: 'semantic' };
+            }
+        }
+
+        // Translate text using Google Translate API
+        async function translateText(text, sourceLang, targetLang) {
+            try {
+                // Using the free Google Translate API endpoint
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Translation failed');
+                }
+                
+                const data = await response.json();
+                
+                // The response format is: [[["translated text", "original text", null, null, 0]], null, "source-lang"]
+                if (data && data[0] && data[0][0] && data[0][0][0]) {
+                    return data[0][0][0];
+                }
+                
+                return null;
+            } catch (error) {
+                console.log('Translation error:', error);
+                return null;
+            }
+        }
+
+        // Clean text for comparison
+        function cleanForComparison(text) {
+            return text.toLowerCase()
+                .trim()
+                .replace(/[áàäâ]/g, 'a')
+                .replace(/[éèëê]/g, 'e')
+                .replace(/[íìïî]/g, 'i')
+                .replace(/[óòöô]/g, 'o')
+                .replace(/[úùüû]/g, 'u')
+                .replace(/ñ/g, 'n')
+                .replace(/[^\w\s]/g, ' ')  // Replace punctuation with space
+                .replace(/\s+/g, ' ')       // Normalize spaces
+                .trim();
+        }
+
+        // Calculate similarity between two strings
+        function calculateSimilarity(str1, str2) {
+            // Use a combination of methods for better accuracy
+            
+            // 1. Exact match
+            if (str1 === str2) {
+                return 1.0;
+            }
+
+            // 2. One contains the other
+            if (str1.includes(str2) || str2.includes(str1)) {
+                const shorter = str1.length < str2.length ? str1 : str2;
+                const longer = str1.length < str2.length ? str2 : str1;
+                return shorter.length / longer.length;
+            }
+
+            // 3. Levenshtein distance-based similarity
+            const maxLen = Math.max(str1.length, str2.length);
+            if (maxLen === 0) return 1.0;
+            
+            const distance = levenshteinDistance(str1, str2);
+            const levSimilarity = 1 - (distance / maxLen);
+
+            // 4. Word overlap similarity
+            const words1 = str1.split(/\s+/).filter(w => w.length > 0);
+            const words2 = str2.split(/\s+/).filter(w => w.length > 0);
+            
+            if (words1.length === 0 || words2.length === 0) {
+                return levSimilarity;
+            }
+
+            let matchCount = 0;
+            for (const w1 of words1) {
+                for (const w2 of words2) {
+                    // Consider words similar if they share significant overlap
+                    if (w1 === w2 || w1.includes(w2) || w2.includes(w1)) {
+                        matchCount++;
+                        break;
+                    }
+                    // Or if they're very close in spelling
+                    const wordDist = levenshteinDistance(w1, w2);
+                    const wordSim = 1 - (wordDist / Math.max(w1.length, w2.length));
+                    if (wordSim >= 0.8) {
+                        matchCount++;
+                        break;
+                    }
+                }
+            }
+
+            const wordSimilarity = (2 * matchCount) / (words1.length + words2.length);
+
+            // Return the maximum of the two similarity measures
+            return Math.max(levSimilarity, wordSimilarity);
+        }
+
         function isAnswerCorrect(userAnswer, correctAnswer) {
             let user = userAnswer.toLowerCase().trim();
             let correct = correctAnswer.toLowerCase().trim();
@@ -3450,13 +3779,42 @@ perro: dog
                 }
             }
 
-            // 2. Check for very close matches (allowing for small typos)
+            // 2. Check for very close matches (allowing for small typos) - MORE LENIENT
             const distance = levenshteinDistance(user, correct);
-            // Allow more typos for longer words: 1 typo for short words (up to 5 chars), 2 for medium (6-10), 3 for long (11+)
-            const maxDistance = correct.length <= 5 ? 1 : correct.length <= 10 ? 2 : 3;
+            // Allow more typos for longer words: 2 typos for short (up to 5 chars), 3 for medium (6-10), 4 for long (11+)
+            const maxDistance = correct.length <= 5 ? 2 : correct.length <= 10 ? 3 : 4;
 
             if (distance <= maxDistance && distance > 0) {
                 return { isCorrect: true, matchType: 'fuzzy' };
+            }
+
+            // 2.5. Check similarity percentage - accept if >= 70% similar
+            const similarity = 1 - (distance / Math.max(user.length, correct.length));
+            if (similarity >= 0.70) {
+                return { isCorrect: true, matchType: 'fuzzy' };
+            }
+
+            // 2.6. Check if they are synonyms
+            if (areSynonyms(user, correct)) {
+                return { isCorrect: true, matchType: 'variation' };
+            }
+
+            // 2.7. Check individual words for synonyms (for multi-word answers)
+            const userWords = user.split(/\s+/);
+            const correctWords = correct.split(/\s+/);
+            if (userWords.length === correctWords.length && userWords.length > 1) {
+                let allWordsMatch = true;
+                for (let i = 0; i < userWords.length; i++) {
+                    if (!areSynonyms(userWords[i], correctWords[i]) && 
+                        userWords[i] !== correctWords[i] &&
+                        levenshteinDistance(userWords[i], correctWords[i]) > 2) {
+                        allWordsMatch = false;
+                        break;
+                    }
+                }
+                if (allWordsMatch) {
+                    return { isCorrect: true, matchType: 'variation' };
+                }
             }
 
             // 3. Check for common variations (articles, plural/singular, etc.)
