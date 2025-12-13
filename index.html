@@ -130,6 +130,19 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
+        .mistakes-badge {
+            display: inline-block;
+            background: var(--error);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+
         .panel {
             display: none;
             animation: fadeIn 0.4s ease-out;
@@ -1448,6 +1461,7 @@
         <div class="tabs">
             <button class="tab active" data-tab="input">Add Words</button>
             <button class="tab" data-tab="quiz">Take Quiz</button>
+            <button class="tab" data-tab="mistakes">Mistakes <span class="mistakes-badge" id="mistakes-count-badge" style="display: none;">0</span></button>
         </div>
 
         <!-- Input Panel -->
@@ -1599,6 +1613,20 @@ perro: dog
                 <!-- Quiz content will be dynamically inserted here -->
             </div>
         </div>
+
+        <!-- Mistakes Panel -->
+        <div class="panel" id="mistakes-panel">
+            <div class="mistakes-container">
+                <div class="mistakes-header" style="margin-bottom: 2rem; text-align: center;">
+                    <h2 style="font-family: 'Instrument Serif', serif; font-size: 2rem; margin-bottom: 0.5rem;">📝 Your Mistakes</h2>
+                    <p style="color: var(--text-secondary);">Review and practice the words you got wrong</p>
+                </div>
+                
+                <div id="mistakes-content">
+                    <!-- Mistakes content will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="toast" id="toast">Words added successfully!</div>
@@ -1665,6 +1693,9 @@ perro: dog
         let originalImageData = null;
         let fuzzyMatchingEnabled = true;
         
+        // Mistakes tracking
+        let mistakes = []; // Array of {word: {...}, userAnswer: string, correctAnswer: string, mode: string, timestamp: number, reviewCount: number}
+        
         // Section-based learning
         let sectionSize = 10; // Words per section
         let allSections = [];
@@ -1693,6 +1724,223 @@ perro: dog
                 vocabulary = [];
             }
         }
+
+        // ==================== MISTAKES MANAGEMENT ====================
+        
+        // Save mistakes to localStorage
+        function saveMistakes() {
+            try {
+                localStorage.setItem('spanishMistakes', JSON.stringify(mistakes));
+                updateMistakesBadge();
+            } catch (error) {
+                console.warn('Error saving mistakes to localStorage:', error);
+            }
+        }
+
+        // Load mistakes from localStorage
+        function loadMistakes() {
+            try {
+                const saved = localStorage.getItem('spanishMistakes');
+                if (saved) {
+                    mistakes = JSON.parse(saved);
+                    if (!Array.isArray(mistakes)) {
+                        mistakes = [];
+                    }
+                } else {
+                    mistakes = [];
+                }
+            } catch (error) {
+                console.warn('Error loading mistakes from localStorage:', error);
+                mistakes = [];
+            }
+            updateMistakesBadge();
+        }
+
+        // Add a mistake
+        function addMistake(word, userAnswer, correctAnswer, mode) {
+            // Check if this exact mistake already exists (don't add duplicates in same session)
+            const existingIndex = mistakes.findIndex(m => 
+                m.word.id === word.id && m.mode === mode
+            );
+
+            if (existingIndex !== -1) {
+                // Update existing mistake
+                mistakes[existingIndex].userAnswer = userAnswer;
+                mistakes[existingIndex].timestamp = Date.now();
+                mistakes[existingIndex].reviewCount = (mistakes[existingIndex].reviewCount || 0);
+            } else {
+                // Add new mistake
+                mistakes.push({
+                    word: { ...word },
+                    userAnswer: userAnswer,
+                    correctAnswer: correctAnswer,
+                    mode: mode,
+                    timestamp: Date.now(),
+                    reviewCount: 0,
+                    needsReview: true
+                });
+            }
+            saveMistakes();
+        }
+
+        // Remove a mistake
+        function removeMistake(index) {
+            mistakes.splice(index, 1);
+            saveMistakes();
+            renderMistakesList();
+        }
+        window.removeMistake = removeMistake; // Make globally accessible for inline onclick
+
+        // Clear all mistakes
+        function clearAllMistakes() {
+            if (mistakes.length === 0) {
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to clear all ${mistakes.length} mistakes?`)) {
+                mistakes = [];
+                saveMistakes();
+                renderMistakesList();
+                showToast('All mistakes cleared!');
+            }
+        }
+
+        // Mark mistake as reviewed
+        function markMistakeReviewed(mistakeId) {
+            const mistake = mistakes.find(m => m.word.id === mistakeId);
+            if (mistake) {
+                mistake.reviewCount = (mistake.reviewCount || 0) + 1;
+                mistake.needsReview = false;
+                mistake.lastReviewed = Date.now();
+                saveMistakes();
+            }
+        }
+
+        // Get mistakes that need review
+        function getMistakesNeedingReview() {
+            return mistakes.filter(m => m.needsReview && m.reviewCount < 3);
+        }
+
+        // Update mistakes badge count
+        function updateMistakesBadge() {
+            const badge = document.getElementById('mistakes-count-badge');
+            if (badge) {
+                if (mistakes.length > 0) {
+                    badge.textContent = mistakes.length;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // Render mistakes list
+        function renderMistakesList() {
+            const mistakesContent = document.getElementById('mistakes-content');
+            
+            if (mistakes.length === 0) {
+                mistakesContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <p>No mistakes yet! You're doing great!</p>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+                            Wrong answers from quizzes will appear here for review.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort mistakes by timestamp (most recent first)
+            const sortedMistakes = [...mistakes].sort((a, b) => b.timestamp - a.timestamp);
+
+            mistakesContent.innerHTML = `
+                <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="color: var(--text-secondary);">
+                        <span style="font-size: 1.1rem; color: var(--accent); font-weight: 600;">${mistakes.length}</span> 
+                        ${mistakes.length === 1 ? 'mistake' : 'mistakes'} to review
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="practice-mistakes-btn" style="font-size: 0.9rem;">
+                            Practice Mistakes
+                        </button>
+                        <button class="btn btn-secondary" id="clear-mistakes-btn" style="font-size: 0.9rem;">
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="words-grid">
+                    ${sortedMistakes.map((mistake, index) => {
+                        const realIndex = mistakes.findIndex(m => 
+                            m.word.id === mistake.word.id && m.timestamp === mistake.timestamp
+                        );
+                        const modeLabel = mistake.mode === 'spanish-to-english' ? 'ES → EN' : 'EN → ES';
+                        const reviewStatus = mistake.reviewCount > 0 
+                            ? `<span style="color: var(--success); font-size: 0.8rem;">✓ Reviewed ${mistake.reviewCount}x</span>`
+                            : '<span style="color: var(--error); font-size: 0.8rem;">● Needs review</span>';
+                        
+                        return `
+                            <div class="word-item" style="border-left: 3px solid var(--error);">
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+                                    <div class="word-pair">
+                                        <span class="spanish-word">${escapeHtml(mistake.word.spanish)}</span>
+                                        <span class="arrow">→</span>
+                                        <span class="english-word">${escapeHtml(mistake.word.english)}</span>
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap;">
+                                        <span>Your answer: <span style="color: var(--error);">${escapeHtml(mistake.userAnswer || 'skipped')}</span></span>
+                                        <span style="background: var(--bg-secondary); padding: 0.2rem 0.5rem; border-radius: 4px;">${modeLabel}</span>
+                                        ${reviewStatus}
+                                    </div>
+                                </div>
+                                <div class="word-actions">
+                                    <button class="delete-btn" onclick="removeMistake(${realIndex})" title="Remove">×</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            // Add event listeners
+            const practiceMistakesBtn = document.getElementById('practice-mistakes-btn');
+            if (practiceMistakesBtn) {
+                practiceMistakesBtn.addEventListener('click', startMistakesQuiz);
+            }
+
+            const clearMistakesBtn = document.getElementById('clear-mistakes-btn');
+            if (clearMistakesBtn) {
+                clearMistakesBtn.addEventListener('click', clearAllMistakes);
+            }
+        }
+
+        // Start a quiz with only mistakes
+        function startMistakesQuiz() {
+            if (mistakes.length === 0) {
+                showToast('No mistakes to practice!');
+                return;
+            }
+
+            // Switch to quiz tab
+            const quizTab = document.querySelector('[data-tab="quiz"]');
+            if (quizTab) {
+                quizTab.click();
+            }
+
+            // Use the same mode as the mistake
+            const mistakeWords = mistakes.map(m => m.word);
+            currentQuiz = shuffle(mistakeWords);
+            currentIndex = 0;
+            score = { correct: 0, incorrect: 0 };
+            answered = false;
+            allSections = [];
+            
+            renderQuestion();
+        }
+
+        // Initialize mistakes
+        loadMistakes();
 
         // Initialize vocabulary
         loadVocabulary();
@@ -1746,6 +1994,8 @@ perro: dog
 
                 if (tab.dataset.tab === 'quiz') {
                     renderQuizStart();
+                } else if (tab.dataset.tab === 'mistakes') {
+                    renderMistakesList();
                 }
             });
         });
@@ -3187,7 +3437,20 @@ perro: dog
             clearQuizProgress();
             
             // RANDOMIZATION STEP 1: Shuffle all vocabulary words
-            const shuffled = shuffle(vocabulary);
+            let shuffled = shuffle(vocabulary);
+            
+            // Mix in mistakes that need review (every 5 words, add 1 mistake)
+            const mistakesToReview = getMistakesNeedingReview();
+            if (mistakesToReview.length > 0 && vocabulary.length > 5) {
+                const mistakeWords = shuffle(mistakesToReview.map(m => m.word));
+                const numMistakesToAdd = Math.min(mistakeWords.length, Math.floor(vocabulary.length / 5));
+                
+                // Insert mistakes at regular intervals
+                for (let i = 0; i < numMistakesToAdd; i++) {
+                    const insertPosition = Math.floor((i + 1) * shuffled.length / (numMistakesToAdd + 1));
+                    shuffled.splice(insertPosition, 0, mistakeWords[i]);
+                }
+            }
             
             // If section size is 0, do all at once (classic mode)
             if (sectionSize === 0 || vocabulary.length <= sectionSize) {
@@ -3285,6 +3548,10 @@ perro: dog
             const displayWord = quizMode === 'spanish-to-english' ? word.spanish : word.english;
             const progress = ((currentIndex) / currentQuiz.length) * 100;
 
+            // Check if this word is a mistake being reviewed
+            const isMistake = mistakes.some(m => m.word.id === word.id);
+            const mistakeBadge = isMistake ? '<span style="background: var(--error); color: white; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 12px; margin-left: 0.5rem;">📝 Review</span>' : '';
+
             // Build header with section info if applicable
             let headerHTML = '';
             if (allSections.length > 0) {
@@ -3314,7 +3581,7 @@ perro: dog
                     <div class="question-counter">${currentIndex + 1} / ${currentQuiz.length}</div>
                 </div>
                 <div class="quiz-card">
-                    <div class="quiz-prompt">${prompt}</div>
+                    <div class="quiz-prompt">${prompt}${mistakeBadge}</div>
                     <div class="quiz-word">${escapeHtml(displayWord)}</div>
                     <input type="text" class="quiz-input" id="answer-input" placeholder="Type your answer..." autocomplete="off">
                     <div class="feedback" id="feedback"></div>
@@ -3362,6 +3629,9 @@ perro: dog
                     answered = true;
                     checkBtn.textContent = 'Next';
                     skipBtn.style.display = 'none';
+                    
+                    // Track mistake
+                    addMistake(word, '', simpleAnswer, quizMode);
                     
                     // Track for section mode
                     if (allSections.length > 0) {
@@ -3436,6 +3706,9 @@ perro: dog
                 feedback.innerHTML = message;
                 answerInput.classList.add('correct');
                 
+                // Mark mistake as reviewed if this was a mistake
+                markMistakeReviewed(word.id);
+                
                 // Track result for section mode
                 if (allSections.length > 0) {
                     sectionResults.push({
@@ -3449,6 +3722,9 @@ perro: dog
                 // Show the simple answer (what they needed to type)
                 feedback.innerHTML = `<span class="incorrect">Not quite.</span> <span class="correct-answer">The answer was: ${escapeHtml(simpleAnswer)}</span>`;
                 answerInput.classList.add('incorrect');
+                
+                // Track mistake
+                addMistake(word, userAnswer, simpleAnswer, quizMode);
                 
                 // Track result for section mode
                 if (allSections.length > 0) {
